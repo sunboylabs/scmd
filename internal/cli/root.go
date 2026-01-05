@@ -9,6 +9,8 @@ import (
 
 	"github.com/scmd/scmd/internal/backend"
 	"github.com/scmd/scmd/internal/backend/mock"
+	"github.com/scmd/scmd/internal/backend/ollama"
+	"github.com/scmd/scmd/internal/backend/openai"
 	"github.com/scmd/scmd/internal/command"
 	"github.com/scmd/scmd/internal/command/builtin"
 	"github.com/scmd/scmd/internal/config"
@@ -23,6 +25,8 @@ var (
 	formatFlag   string
 	quietFlag    bool
 	contextFlags []string
+	backendFlag  string
+	modelFlag    string
 
 	// Global registries
 	cmdRegistry     *command.Registry
@@ -34,11 +38,21 @@ var rootCmd = &cobra.Command{
 	Short: "AI-powered slash commands in your terminal",
 	Long: `scmd brings AI-powered slash commands to any terminal.
 
+Backends (in order of preference):
+  - Ollama (local): Runs free open-source models locally
+  - OpenAI/Together/Groq: Set API key via environment variable
+
 Examples:
   scmd                           Start interactive mode
   scmd explain file.go           Explain code
   cat foo.md | scmd -p "summarize this" > summary.md
-  git diff | scmd review -o review.md`,
+  git diff | scmd review -o review.md
+
+Environment Variables:
+  OLLAMA_HOST          Ollama server URL (default: http://localhost:11434)
+  OPENAI_API_KEY       OpenAI API key
+  TOGETHER_API_KEY     Together.ai API key
+  GROQ_API_KEY         Groq API key`,
 	Version:           version.Short(),
 	PersistentPreRunE: preRun,
 	RunE:              runRoot,
@@ -47,6 +61,10 @@ Examples:
 func init() {
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+
+	// Backend flags
+	rootCmd.PersistentFlags().StringVarP(&backendFlag, "backend", "b", "", "backend to use: ollama, openai, together, groq")
+	rootCmd.PersistentFlags().StringVarP(&modelFlag, "model", "m", "", "model to use (overrides default)")
 
 	// Pipe/prompt flags
 	rootCmd.PersistentFlags().StringVarP(&promptFlag, "prompt", "p", "", "inline prompt")
@@ -60,8 +78,38 @@ func init() {
 	rootCmd.AddCommand(explainCmd)
 	rootCmd.AddCommand(reviewCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(backendsCmd)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+}
+
+// backendsCmd lists available backends
+var backendsCmd = &cobra.Command{
+	Use:   "backends",
+	Short: "List available LLM backends",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := context.Background()
+		fmt.Println("Available backends:")
+		fmt.Println()
+
+		for _, b := range backendRegistry.List() {
+			avail, _ := b.IsAvailable(ctx)
+			status := "✗"
+			if avail {
+				status = "✓"
+			}
+			fmt.Printf("  %s %-12s %s\n", status, b.Name(), b.ModelInfo().Name)
+		}
+
+		fmt.Println()
+		fmt.Println("Environment variables:")
+		fmt.Println("  OLLAMA_HOST        - Ollama server (default: http://localhost:11434)")
+		fmt.Println("  OPENAI_API_KEY     - OpenAI API key")
+		fmt.Println("  TOGETHER_API_KEY   - Together.ai API key")
+		fmt.Println("  GROQ_API_KEY       - Groq API key")
+
+		return nil
+	},
 }
 
 // explainCmd wraps the builtin explain command
@@ -124,11 +172,16 @@ func runBuiltinCommand(name string, args []string) error {
 	}
 	defer output.Close()
 
+	// Get the best available backend
+	activeBackend, err := getActiveBackend(ctx)
+	if err != nil && verbose {
+		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+	}
+
 	// Create execution context
-	defaultBackend, _ := backendRegistry.Default()
 	execCtx := &command.ExecContext{
 		Config:  cfg,
-		Backend: defaultBackend,
+		Backend: activeBackend,
 		UI:      NewConsoleUI(mode),
 	}
 
@@ -181,11 +234,40 @@ func preRun(_ *cobra.Command, _ []string) error {
 	cmdRegistry = command.NewRegistry()
 	backendRegistry = backend.NewRegistry()
 
-	// Register mock backend for now
-	mockBackend := mock.New()
-	if err := backendRegistry.Register(mockBackend); err != nil {
-		return fmt.Errorf("register backend: %w", err)
+	// Register backends in order of preference
+
+	// 1. Ollama (local, free, preferred)
+	ollamaHost := os.Getenv("OLLAMA_HOST")
+	if ollamaHost == "" {
+		ollamaHost = "http://localhost:11434"
 	}
+	ollamaBackend := ollama.New(&ollama.Config{
+		BaseURL: ollamaHost,
+		Model:   cfg.Backends.Local.Model,
+	})
+	_ = backendRegistry.Register(ollamaBackend)
+
+	// 2. Groq (fast, free tier available)
+	if os.Getenv("GROQ_API_KEY") != "" {
+		groqBackend := openai.NewGroq(os.Getenv("GROQ_API_KEY"))
+		_ = backendRegistry.Register(groqBackend)
+	}
+
+	// 3. Together.ai (many models, competitive pricing)
+	if os.Getenv("TOGETHER_API_KEY") != "" {
+		togetherBackend := openai.NewTogether(os.Getenv("TOGETHER_API_KEY"))
+		_ = backendRegistry.Register(togetherBackend)
+	}
+
+	// 4. OpenAI (proprietary, high quality)
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		openaiBackend := openai.NewOpenAI(os.Getenv("OPENAI_API_KEY"))
+		_ = backendRegistry.Register(openaiBackend)
+	}
+
+	// 5. Mock backend (fallback for testing)
+	mockBackend := mock.New()
+	_ = backendRegistry.Register(mockBackend)
 
 	// Register built-in commands
 	if err := builtin.RegisterAll(cmdRegistry); err != nil {
@@ -193,6 +275,42 @@ func preRun(_ *cobra.Command, _ []string) error {
 	}
 
 	return nil
+}
+
+// getActiveBackend returns the best available backend
+func getActiveBackend(ctx context.Context) (backend.Backend, error) {
+	// If user specified a backend, use it
+	if backendFlag != "" {
+		b, ok := backendRegistry.Get(backendFlag)
+		if !ok {
+			return nil, fmt.Errorf("unknown backend: %s", backendFlag)
+		}
+		if modelFlag != "" {
+			// Set model if supported
+			if setter, ok := b.(interface{ SetModel(string) }); ok {
+				setter.SetModel(modelFlag)
+			}
+		}
+		return b, nil
+	}
+
+	// Try to find an available backend
+	b, err := backendRegistry.GetAvailable(ctx)
+	if err != nil {
+		// Fall back to mock
+		if mock, ok := backendRegistry.Get("mock"); ok {
+			return mock, nil
+		}
+		return nil, err
+	}
+
+	if modelFlag != "" {
+		if setter, ok := b.(interface{ SetModel(string) }); ok {
+			setter.SetModel(modelFlag)
+		}
+	}
+
+	return b, nil
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -217,11 +335,16 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	}
 	defer output.Close()
 
+	// Get the best available backend
+	activeBackend, err := getActiveBackend(ctx)
+	if err != nil && verbose {
+		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+	}
+
 	// Create execution context
-	defaultBackend, _ := backendRegistry.Default()
 	execCtx := &command.ExecContext{
 		Config:  cfg,
-		Backend: defaultBackend,
+		Backend: activeBackend,
 		UI:      NewConsoleUI(mode),
 	}
 
@@ -267,35 +390,58 @@ func runRoot(cmd *cobra.Command, args []string) error {
 }
 
 func runPrompt(ctx context.Context, prompt, stdin string, mode *IOMode, output *OutputWriter, execCtx *command.ExecContext) error {
-	if !quietFlag && mode.StderrIsTTY {
-		fmt.Fprintln(mode.ProgressWriter(), "⏳ Processing...")
+	if execCtx.Backend == nil {
+		return fmt.Errorf("no backend available. Install Ollama or set an API key")
 	}
 
-	// Use backend for completion
-	if execCtx.Backend != nil {
-		fullPrompt := prompt
-		if stdin != "" {
-			fullPrompt = fmt.Sprintf("%s\n\nInput:\n%s", prompt, stdin)
-		}
+	if !quietFlag && mode.StderrIsTTY {
+		fmt.Fprintf(mode.ProgressWriter(), "⏳ Using %s...\n", execCtx.Backend.Name())
+	}
 
-		req := &backend.CompletionRequest{
-			Prompt:      fullPrompt,
-			MaxTokens:   2048,
-			Temperature: 0.7,
-		}
+	fullPrompt := prompt
+	if stdin != "" {
+		fullPrompt = fmt.Sprintf("%s\n\nInput:\n%s", prompt, stdin)
+	}
 
-		resp, err := execCtx.Backend.Complete(ctx, req)
+	req := &backend.CompletionRequest{
+		Prompt:      fullPrompt,
+		MaxTokens:   2048,
+		Temperature: 0.7,
+	}
+
+	// Use streaming if TTY
+	if mode.StdoutIsTTY && !mode.PipeOut {
+		ch, err := execCtx.Backend.Stream(ctx, req)
 		if err != nil {
-			return fmt.Errorf("completion failed: %w", err)
+			// Fall back to non-streaming
+			resp, err := execCtx.Backend.Complete(ctx, req)
+			if err != nil {
+				return fmt.Errorf("completion failed: %w", err)
+			}
+			output.WriteLine(resp.Content)
+			return nil
 		}
 
-		output.WriteLine(resp.Content)
+		for chunk := range ch {
+			if chunk.Error != nil {
+				return fmt.Errorf("stream error: %w", chunk.Error)
+			}
+			fmt.Print(chunk.Content)
+			if chunk.Done {
+				fmt.Println()
+				break
+			}
+		}
 		return nil
 	}
 
-	// Placeholder if no backend
-	result := fmt.Sprintf("Prompt: %s\nInput length: %d bytes", prompt, len(stdin))
-	output.WriteLine(result)
+	// Non-streaming for pipes
+	resp, err := execCtx.Backend.Complete(ctx, req)
+	if err != nil {
+		return fmt.Errorf("completion failed: %w", err)
+	}
+
+	output.WriteLine(resp.Content)
 	return nil
 }
 
@@ -327,6 +473,15 @@ func runCommandWithStdin(ctx context.Context, cmdName string, args []string, std
 
 func runREPL(execCtx *command.ExecContext) error {
 	fmt.Println("scmd - AI-powered slash commands")
+
+	// Show which backend is active
+	if execCtx.Backend != nil {
+		info := execCtx.Backend.ModelInfo()
+		fmt.Printf("Using: %s (%s)\n", execCtx.Backend.Name(), info.Name)
+	} else {
+		fmt.Println("Warning: No backend available")
+	}
+
 	fmt.Println("Type /help for available commands")
 	fmt.Println()
 
