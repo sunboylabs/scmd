@@ -86,6 +86,7 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(lockCmd)
 	rootCmd.AddCommand(cacheCmd)
+	rootCmd.AddCommand(slashCmd)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }

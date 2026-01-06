@@ -2,30 +2,29 @@
 
 **AI-powered slash commands for any terminal.**
 
-scmd brings the power of LLM-based slash commands to your command line. Install commands from repositories, chain them together, and supercharge your terminal workflow.
+scmd brings the power of LLM-based slash commands to your command line. Type `/gc` to generate commit messages, `/explain` to understand code, or install new commands from community repositories.
 
 ```bash
-# Explain code
+# With shell integration, use real slash commands:
+/gc                     # Generate commit message from staged changes
+/explain main.go        # Explain code
+/review                 # Review code for issues
+git diff | /sum         # Summarize changes
+
+# Or use the scmd command directly:
 cat main.go | scmd explain
-
-# Generate commit messages
 git diff | scmd git-commit
-
-# Review code with security focus
-cat api.py | scmd code-review --focus=security
-
-# Chain commands in a pipeline
-git diff | scmd explain | scmd summarize
 ```
 
 ## Features
 
+- **Real Slash Commands** - Type `/command` directly in your terminal
 - **Repository System** - Install commands from community repos or create your own
 - **Multiple LLM Backends** - Ollama (local), OpenAI, Together.ai, Groq
 - **Command Composition** - Chain commands in pipelines, run in parallel, or use fallbacks
+- **Shell Integration** - Bash, Zsh, and Fish support with tab completion
 - **Offline Support** - Local caching for commands and manifests
 - **Lockfiles** - Reproducible installations for teams
-- **Central Registry** - Discover verified commands with ratings and categories
 
 ## Installation
 
@@ -53,6 +52,66 @@ echo "SELECT * FROM users" | scmd -p "optimize this SQL query"
 
 # Save output to file
 git diff | scmd review -o review.md
+```
+
+## Slash Commands
+
+The core feature of scmd is real slash commands in your terminal.
+
+### Setup Shell Integration
+
+```bash
+# For Bash/Zsh - add to your ~/.bashrc or ~/.zshrc:
+eval "$(scmd slash init bash)"
+
+# For Fish - add to ~/.config/fish/config.fish:
+scmd slash init fish | source
+```
+
+### Using Slash Commands
+
+After setup, use slash commands directly:
+
+```bash
+/explain main.go           # Explain code
+/gc                        # Generate commit message (alias for git-commit)
+/review                    # Review code
+/sum                       # Summarize (alias for summarize)
+/fix                       # Explain errors
+
+# Pipe input to commands
+cat error.log | /fix
+git diff | /gc
+curl api.com/data | /sum
+```
+
+### Built-in Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `/explain` | `/e`, `/exp` | Explain code or concepts |
+| `/review` | `/r`, `/rev` | Review code for issues |
+| `/commit` | `/gc`, `/gitc` | Generate git commit messages |
+| `/summarize` | `/s`, `/sum`, `/tldr` | Summarize text |
+| `/fix` | `/f`, `/err` | Explain and fix errors |
+
+### Managing Slash Commands
+
+```bash
+# List all slash commands
+scmd slash list
+
+# Add a new slash command
+scmd slash add doc generate-docs --alias=d,docs
+
+# Add an alias to existing command
+scmd slash alias commit c
+
+# Remove a slash command
+scmd slash remove doc
+
+# Interactive mode (REPL)
+scmd slash interactive
 ```
 
 ## Repository System
@@ -278,6 +337,15 @@ Commands:
   review      Review code for issues
   config      View/modify configuration
   backends    List available backends
+
+  slash       Slash command management
+    run       Run a slash command
+    list      List slash commands
+    add       Add a slash command
+    remove    Remove a slash command
+    alias     Add an alias
+    init      Generate shell integration
+    interactive  Start REPL mode
 
   repo        Manage repositories
     add       Add a repository
