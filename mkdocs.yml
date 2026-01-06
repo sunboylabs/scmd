@@ -1,0 +1,165 @@
+site_name: scmd Documentation
+site_description: AI-powered slash commands for any terminal
+site_author: scmd team
+site_url: https://scmd.github.io/scmd/
+
+repo_name: scmd/scmd
+repo_url: https://github.com/scmd/scmd
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2024 scmd team
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+plugins:
+  - search:
+      lang: en
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/scmd/scmd
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/scmd
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+      - Your First Command: getting-started/first-command.md
+      - Shell Integration: getting-started/shell-integration.md
+  - User Guide:
+      - Slash Commands: user-guide/slash-commands.md
+      - LLM Backends: user-guide/backends.md
+      - Model Management: user-guide/models.md
+      - Repositories: user-guide/repositories.md
+      - Configuration: user-guide/configuration.md
+      - CLI Reference: user-guide/cli-reference.md
+      - Troubleshooting: user-guide/troubleshooting.md
+  - Command Authoring:
+      - Overview: command-authoring/overview.md
+      - YAML Specification: command-authoring/yaml-specification.md
+      - Prompts & Templates: command-authoring/prompts-and-templates.md
+      - Tool Calling: command-authoring/tool-calling.md
+      - Hooks: command-authoring/hooks.md
+      - Composition: command-authoring/composition.md
+      - Dependencies: command-authoring/dependencies.md
+      - Testing Commands: command-authoring/testing-commands.md
+      - Best Practices: command-authoring/best-practices.md
+  - Repository Guide:
+      - Creating Repositories: repository-guide/creating-repositories.md
+      - Manifest Format: repository-guide/manifest-format.md
+      - Versioning: repository-guide/versioning.md
+      - Publishing: repository-guide/publishing.md
+      - Registry Submission: repository-guide/registry-submission.md
+  - Contributing:
+      - Development Setup: contributing/development-setup.md
+      - Architecture: contributing/architecture.md
+      - Codebase Guide: contributing/codebase-guide.md
+      - Internal Packages: contributing/internal-packages.md
+      - Adding Backends: contributing/adding-backends.md
+      - Adding Tools: contributing/adding-tools.md
+      - Testing: contributing/testing.md
+      - Pull Requests: contributing/pull-requests.md
+  - Reference:
+      - Command Specification: reference/command-spec.md
+      - Tool API: reference/tool-api.md
+      - Backend API: reference/backend-api.md
+      - Environment Variables: reference/environment-variables.md
+      - Error Codes: reference/error-codes.md
+  - Examples:
+      - Basic Commands: examples/basic-commands.md
+      - Advanced Composition: examples/advanced-composition.md
+      - Tool Calling Examples: examples/tool-calling-examples.md
+      - Git Workflow: examples/git-workflow.md
+      - Use Cases: examples/use-cases.md
+  - About:
+      - FAQ: about/faq.md
+      - Changelog: about/changelog.md
+      - Roadmap: about/roadmap.md
+      - License: about/license.md
