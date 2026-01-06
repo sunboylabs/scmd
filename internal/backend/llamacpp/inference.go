@@ -122,6 +122,7 @@ func (s *Server) Stop() error {
 
 // Complete sends a completion request to the server
 func (s *Server) Complete(ctx context.Context, prompt string, req *backend.CompletionRequest) (string, error) {
+	debug := os.Getenv("SCMD_DEBUG") != ""
 	url := fmt.Sprintf("http://127.0.0.1:%d/completion", s.port)
 
 	// Build request body
@@ -145,6 +146,10 @@ func (s *Server) Complete(ctx context.Context, prompt string, req *backend.Compl
 		return "", err
 	}
 
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Sending request to %s\n", url)
+	}
+
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", err
@@ -153,13 +158,24 @@ func (s *Server) Complete(ctx context.Context, prompt string, req *backend.Compl
 
 	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("HTTP request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Response status: %d\n", resp.StatusCode)
+	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("read response: %w", err)
+	}
+
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Response body length: %d bytes\n", len(respBody))
+		if len(respBody) < 1000 {
+			fmt.Fprintf(os.Stderr, "[DEBUG] Response body: %s\n", string(respBody))
+		}
 	}
 
 	if resp.StatusCode != http.StatusOK {

@@ -29,31 +29,52 @@ type Model struct {
 }
 
 // DefaultModels contains pre-configured models
+// Using official Qwen GGUF releases from HuggingFace
 var DefaultModels = []Model{
+	// Qwen2.5 official models (recommended)
+	{
+		Name:        "qwen2.5-3b",
+		Variant:     "q4_k_m",
+		URL:         "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
+		Size:        2020000000, // ~2.0GB
+		Description: "Qwen2.5 3B - Good balance of speed and quality",
+		ContextSize: 32768,
+		ToolCalling: true,
+	},
+	{
+		Name:        "qwen2.5-1.5b",
+		Variant:     "q4_k_m",
+		URL:         "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+		Size:        986000000, // ~1.0GB
+		Description: "Qwen2.5 1.5B - Fast and lightweight",
+		ContextSize: 32768,
+		ToolCalling: true,
+	},
+	{
+		Name:        "qwen2.5-0.5b",
+		Variant:     "q4_k_m",
+		URL:         "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+		Size:        397000000, // ~400MB
+		Description: "Qwen2.5 0.5B - Smallest, fastest option",
+		ContextSize: 32768,
+		ToolCalling: true,
+	},
+	{
+		Name:        "qwen2.5-7b",
+		Variant:     "q4_k_m",
+		URL:         "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf",
+		Size:        4680000000, // ~4.7GB
+		Description: "Qwen2.5 7B - Best quality, needs more RAM",
+		ContextSize: 32768,
+		ToolCalling: true,
+	},
+	// Qwen3 models from unsloth (alternative)
 	{
 		Name:        "qwen3-4b",
 		Variant:     "Q4_K_M",
 		URL:         "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
 		Size:        2644000000, // ~2.6GB
 		Description: "Qwen3 4B - Fast, efficient, tool calling support",
-		ContextSize: 32768,
-		ToolCalling: true,
-	},
-	{
-		Name:        "qwen3-1.7b",
-		Variant:     "Q4_K_M",
-		URL:         "https://huggingface.co/unsloth/Qwen3-1.7B-Instruct-2507-GGUF/resolve/main/Qwen3-1.7B-Instruct-2507-Q4_K_M.gguf",
-		Size:        1100000000, // ~1.1GB
-		Description: "Qwen3 1.7B - Smallest, fastest option",
-		ContextSize: 32768,
-		ToolCalling: true,
-	},
-	{
-		Name:        "qwen3-8b",
-		Variant:     "Q4_K_M",
-		URL:         "https://huggingface.co/unsloth/Qwen3-8B-Instruct-2507-GGUF/resolve/main/Qwen3-8B-Instruct-2507-Q4_K_M.gguf",
-		Size:        4900000000, // ~4.9GB
-		Description: "Qwen3 8B - Best quality, needs more RAM",
 		ContextSize: 32768,
 		ToolCalling: true,
 	},
@@ -125,6 +146,9 @@ func (m *ModelManager) downloadModel(ctx context.Context, model *Model, destPath
 		return err
 	}
 
+	// Add headers required by HuggingFace
+	req.Header.Set("User-Agent", "scmd/1.0 (https://github.com/scmd/scmd)")
+
 	resp, err := m.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -132,7 +156,7 @@ func (m *ModelManager) downloadModel(ctx context.Context, model *Model, destPath
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
+		return fmt.Errorf("download failed: HTTP %d from %s", resp.StatusCode, model.URL)
 	}
 
 	// Create temp file
@@ -246,7 +270,7 @@ func (m *ModelManager) DeleteModel(name string) error {
 
 // GetDefaultModel returns the recommended default model
 func GetDefaultModel() string {
-	return "qwen3-4b"
+	return "qwen3-4b" // Use qwen3-4b as default - widely available
 }
 
 func formatBytes(b int64) string {
@@ -343,23 +367,49 @@ func (b *Backend) ListModels(ctx context.Context) ([]string, error) {
 
 // Complete generates a completion
 func (b *Backend) Complete(ctx context.Context, req *backend.CompletionRequest) (*backend.CompletionResponse, error) {
+	debug := os.Getenv("SCMD_DEBUG") != ""
+
 	if err := b.Initialize(ctx); err != nil {
 		return nil, err
+	}
+
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Model path: %s\n", b.modelPath)
 	}
 
 	// Build prompt with system message
 	prompt := b.buildPrompt(req)
 
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Prompt length: %d chars\n", len(prompt))
+		fmt.Fprintf(os.Stderr, "[DEBUG] Prompt preview: %s...\n", truncateStr(prompt, 200))
+	}
+
 	// Use inference engine
 	response, err := b.runInference(ctx, prompt, req)
 	if err != nil {
+		if debug {
+			fmt.Fprintf(os.Stderr, "[DEBUG] Inference error: %v\n", err)
+		}
 		return nil, err
+	}
+
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Response length: %d chars\n", len(response))
+		fmt.Fprintf(os.Stderr, "[DEBUG] Response: %s\n", truncateStr(response, 500))
 	}
 
 	return &backend.CompletionResponse{
 		Content:    response,
 		TokensUsed: 0, // TODO: track tokens
 	}, nil
+}
+
+func truncateStr(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
 
 // Stream generates a streaming completion
