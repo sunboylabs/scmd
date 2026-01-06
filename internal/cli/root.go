@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/scmd/scmd/internal/backend"
+	"github.com/scmd/scmd/internal/backend/llamacpp"
 	"github.com/scmd/scmd/internal/backend/mock"
 	"github.com/scmd/scmd/internal/backend/ollama"
 	"github.com/scmd/scmd/internal/backend/openai"
@@ -87,6 +88,7 @@ func init() {
 	rootCmd.AddCommand(lockCmd)
 	rootCmd.AddCommand(cacheCmd)
 	rootCmd.AddCommand(slashCmd)
+	rootCmd.AddCommand(modelsCmd)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
@@ -243,8 +245,13 @@ func preRun(_ *cobra.Command, _ []string) error {
 	backendRegistry = backend.NewRegistry()
 
 	// Register backends in order of preference
+	dataDir := getDataDir()
 
-	// 1. Ollama (local, free, preferred)
+	// 1. llama.cpp (local, built-in, no setup required)
+	llamaBackend := llamacpp.New(dataDir)
+	_ = backendRegistry.Register(llamaBackend)
+
+	// 2. Ollama (local, if installed)
 	ollamaHost := os.Getenv("OLLAMA_HOST")
 	if ollamaHost == "" {
 		ollamaHost = "http://localhost:11434"
@@ -255,7 +262,7 @@ func preRun(_ *cobra.Command, _ []string) error {
 	})
 	_ = backendRegistry.Register(ollamaBackend)
 
-	// 2. Groq (fast, free tier available)
+	// 3. Groq (fast, free tier available)
 	if os.Getenv("GROQ_API_KEY") != "" {
 		groqBackend := openai.NewGroq(os.Getenv("GROQ_API_KEY"))
 		_ = backendRegistry.Register(groqBackend)
@@ -283,7 +290,6 @@ func preRun(_ *cobra.Command, _ []string) error {
 	}
 
 	// Load plugin commands from installed repos
-	dataDir := getDataDir()
 	mgr := repos.NewManager(dataDir)
 	_ = mgr.Load() // Ignore error, repos may not exist yet
 
