@@ -10,6 +10,7 @@ import (
 type Registry struct {
 	mu       sync.RWMutex
 	backends map[string]Backend
+	order    []string // Preserve registration order
 	default_ string
 }
 
@@ -17,6 +18,7 @@ type Registry struct {
 func NewRegistry() *Registry {
 	return &Registry{
 		backends: make(map[string]Backend),
+		order:    make([]string, 0),
 	}
 }
 
@@ -31,6 +33,7 @@ func (r *Registry) Register(backend Backend) error {
 	}
 
 	r.backends[name] = backend
+	r.order = append(r.order, name) // Preserve order
 	return nil
 }
 
@@ -77,19 +80,21 @@ func (r *Registry) Default() (Backend, error) {
 	return backend, nil
 }
 
-// List returns all registered backends
+// List returns all registered backends in registration order
 func (r *Registry) List() []Backend {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	backends := make([]Backend, 0, len(r.backends))
-	for _, b := range r.backends {
-		backends = append(backends, b)
+	backends := make([]Backend, 0, len(r.order))
+	for _, name := range r.order {
+		if b, ok := r.backends[name]; ok {
+			backends = append(backends, b)
+		}
 	}
 	return backends
 }
 
-// GetAvailable returns the first available backend
+// GetAvailable returns the first available backend in registration order
 func (r *Registry) GetAvailable(ctx context.Context) (Backend, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -103,10 +108,12 @@ func (r *Registry) GetAvailable(ctx context.Context) (Backend, error) {
 		}
 	}
 
-	// Try others
-	for _, b := range r.backends {
-		if avail, _ := b.IsAvailable(ctx); avail {
-			return b, nil
+	// Try others in registration order
+	for _, name := range r.order {
+		if b, ok := r.backends[name]; ok {
+			if avail, _ := b.IsAvailable(ctx); avail {
+				return b, nil
+			}
 		}
 	}
 
