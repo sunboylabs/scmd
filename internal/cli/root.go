@@ -672,9 +672,24 @@ func runREPL(execCtx *command.ExecContext) error {
 // Execute runs the root command
 func Execute() error {
 	// Intercept slash commands before cobra processes them
-	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "/") {
-		return runSlashCommand(os.Args[1], os.Args[2:])
+	// Search all args for a slash command (not just position 1)
+	slashIndex := -1
+	for i := 1; i < len(os.Args); i++ {
+		if strings.HasPrefix(os.Args[i], "/") {
+			slashIndex = i
+			break
+		}
 	}
+
+	if slashIndex > 0 {
+		// Found slash command - extract it and all args (including flags before it)
+		slashCmd := os.Args[slashIndex]
+		// Pass everything except the executable and the slash command itself
+		// This includes flags before the slash command and args after it
+		allArgs := append(os.Args[1:slashIndex], os.Args[slashIndex+1:]...)
+		return runSlashCommand(slashCmd, allArgs)
+	}
+
 	return rootCmd.Execute()
 }
 
@@ -682,6 +697,15 @@ func Execute() error {
 func runSlashCommand(cmd string, args []string) error {
 	// Strip leading slash
 	cmdName := strings.TrimPrefix(cmd, "/")
+
+	// Parse flags from args (e.g., --backend, --model, etc.)
+	// This sets the global flag variables like backendFlag, modelFlag
+	if err := rootCmd.ParseFlags(args); err != nil {
+		return err
+	}
+
+	// Get the non-flag arguments (the actual command arguments)
+	cmdArgs := rootCmd.Flags().Args()
 
 	// Initialize everything via preRun
 	if err := preRun(rootCmd, nil); err != nil {
@@ -749,15 +773,15 @@ func runSlashCommand(cmd string, args []string) error {
 		return NewCommandNotFoundError(cmdName, cmdRegistry.Names())
 	}
 
-	// Build args
-	cmdArgs := command.NewArgs()
-	cmdArgs.Positional = args
+	// Build command args (use cmdArgs from flag parsing, which has non-flag arguments)
+	commandArgs := command.NewArgs()
+	commandArgs.Positional = cmdArgs
 	if stdinContent != "" {
-		cmdArgs.Options["stdin"] = stdinContent
+		commandArgs.Options["stdin"] = stdinContent
 	}
 
 	// Execute
-	result, err := c.Execute(ctx, cmdArgs, execCtx)
+	result, err := c.Execute(ctx, commandArgs, execCtx)
 	if err != nil {
 		return err
 	}

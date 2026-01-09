@@ -9,6 +9,8 @@ before:
     - sh -c 'go test -short -race $(go list ./... | grep -v "/tests/e2e")'
     # Ensure dependencies are up to date
     - go mod tidy
+    # Download llama-server binaries for bundling
+    - sh scripts/download-llama-server.sh
     # Note: Shell completions are pre-generated and committed to completions/
 
 builds:
@@ -47,6 +49,10 @@ archives:
       - INSTALL.md
       - CHANGELOG.md
       - completions/*
+      # Bundle llama-server binary for this platform
+      - src: "dist/llama-server/{{ .Os }}-{{ .Arch }}/llama-server{{ if eq .Os \"windows\" }}.exe{{ end }}"
+        dst: bin/
+        strip_parent: true
     # Default format is tar.gz, windows automatically uses zip
     formats:
       - tar.gz
@@ -63,6 +69,10 @@ archives:
       - INSTALL.md
       - CHANGELOG.md
       - completions/*
+      # Bundle llama-server binary for this platform
+      - src: "dist/llama-server/{{ .Os }}-{{ .Arch }}/llama-server"
+        dst: libexec/
+        strip_parent: true
     formats:
       - tar.gz
 
@@ -113,14 +123,15 @@ brews:
       email: bot@scmd.dev
     install: |
       bin.install "scmd"
+      # Install bundled llama-server
+      libexec.install "libexec/llama-server"
+      # Shell completions
       bash_completion.install "completions/scmd.bash" => "scmd"
       zsh_completion.install "completions/scmd.zsh" => "_scmd"
       fish_completion.install "completions/scmd.fish"
     test: |
       system "#{bin}/scmd", "--version"
-    dependencies:
-      - name: llama.cpp
-        type: optional
+    # No external dependencies - llama-server is bundled!
 
 # Linux packages (deb, rpm, apk)
 nfpms:
@@ -151,9 +162,12 @@ nfpms:
         dst: /usr/share/doc/scmd/LICENSE
       - src: ./INSTALL.md
         dst: /usr/share/doc/scmd/INSTALL.md
-    # Recommends llama.cpp for offline functionality
-    recommends:
-      - llama-cpp
+      # Bundle llama-server binary for this platform
+      - src: "dist/llama-server/linux-{{ .Arch }}/llama-server"
+        dst: /usr/lib/scmd/llama-server
+        file_info:
+          mode: 0755
+    # llama-server is now bundled, no external dependencies needed!
     # Create directories on install
     scripts:
       postinstall: "scripts/postinstall.sh"

@@ -586,6 +586,7 @@ func findLlamaServer() (string, error) {
 		"llama-server",
 		"llama.cpp/build/bin/llama-server",
 		"/usr/local/bin/llama-server",
+		"/usr/lib/scmd/llama-server", // Linux package installation
 		"/opt/llama.cpp/llama-server",
 	}
 
@@ -598,14 +599,28 @@ func findLlamaServer() (string, error) {
 		)
 	}
 
-	// Check bundled binary
+	// Check bundled binary (highest priority)
 	execPath, _ := os.Executable()
 	if execPath != "" {
-		bundledPath := filepath.Join(filepath.Dir(execPath), "llama-server")
+		execDir := filepath.Dir(execPath)
+
+		// 1. Same directory as executable (direct bundle)
+		bundledPath := filepath.Join(execDir, "llama-server")
 		if runtime.GOOS == "windows" {
 			bundledPath += ".exe"
 		}
 		candidates = append([]string{bundledPath}, candidates...)
+
+		// 2. Homebrew libexec location (../libexec/llama-server)
+		homebrewPath := filepath.Join(execDir, "..", "libexec", "llama-server")
+		candidates = append([]string{homebrewPath}, candidates...)
+
+		// 3. Archive bin/ subdirectory (bin/llama-server when extracted)
+		binPath := filepath.Join(execDir, "bin", "llama-server")
+		if runtime.GOOS == "windows" {
+			binPath += ".exe"
+		}
+		candidates = append([]string{binPath}, candidates...)
 	}
 
 	for _, path := range candidates {
