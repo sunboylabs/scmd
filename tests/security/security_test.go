@@ -155,6 +155,10 @@ func TestSecurity_EnvInjection(t *testing.T) {
 // ==================== FILE PERMISSION TESTS ====================
 
 func TestSecurity_OutputFilePermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test that requires binary in short mode")
+	}
+
 	tmpFile := filepath.Join(t.TempDir(), "output.txt")
 	_, _, err := runScmd(t, "-b", "mock", "-p", "test", "-o", tmpFile)
 	if err != nil {
