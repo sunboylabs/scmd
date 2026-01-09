@@ -163,46 +163,46 @@ nfpms:
       postinstall: "scripts/postinstall.sh"
       preremove: "scripts/preremove.sh"
 
-# Docker images (optional)
-dockers:
-  - image_templates:
-      - "scmd/scmd:{{ .Version }}-amd64"
-      - "scmd/scmd:latest-amd64"
-    use: buildx
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.description=AI-powered slash commands for any terminal"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.created={{ .Date }}"
-      - "--label=org.opencontainers.image.source={{ .GitURL }}"
-      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-  - image_templates:
-      - "scmd/scmd:{{ .Version }}-arm64"
-      - "scmd/scmd:latest-arm64"
-    use: buildx
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.description=AI-powered slash commands for any terminal"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.created={{ .Date }}"
-      - "--label=org.opencontainers.image.source={{ .GitURL }}"
-      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-    goarch: arm64
+# Docker images (disabled - no Docker Hub credentials)
+# dockers:
+#   - image_templates:
+#       - "scmd/scmd:{{ .Version }}-amd64"
+#       - "scmd/scmd:latest-amd64"
+#     use: buildx
+#     dockerfile: Dockerfile
+#     build_flag_templates:
+#       - "--platform=linux/amd64"
+#       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+#       - "--label=org.opencontainers.image.description=AI-powered slash commands for any terminal"
+#       - "--label=org.opencontainers.image.version={{ .Version }}"
+#       - "--label=org.opencontainers.image.created={{ .Date }}"
+#       - "--label=org.opencontainers.image.source={{ .GitURL }}"
+#       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+#   - image_templates:
+#       - "scmd/scmd:{{ .Version }}-arm64"
+#       - "scmd/scmd:latest-arm64"
+#     use: buildx
+#     dockerfile: Dockerfile
+#     build_flag_templates:
+#       - "--platform=linux/arm64"
+#       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+#       - "--label=org.opencontainers.image.description=AI-powered slash commands for any terminal"
+#       - "--label=org.opencontainers.image.version={{ .Version }}"
+#       - "--label=org.opencontainers.image.created={{ .Date }}"
+#       - "--label=org.opencontainers.image.source={{ .GitURL }}"
+#       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+#     goarch: arm64
 
-# Docker manifest for multi-arch
-docker_manifests:
-  - name_template: scmd/scmd:{{ .Version }}
-    image_templates:
-      - scmd/scmd:{{ .Version }}-amd64
-      - scmd/scmd:{{ .Version }}-arm64
-  - name_template: scmd/scmd:latest
-    image_templates:
-      - scmd/scmd:latest-amd64
-      - scmd/scmd:latest-arm64
+# Docker manifest for multi-arch (disabled)
+# docker_manifests:
+#   - name_template: scmd/scmd:{{ .Version }}
+#     image_templates:
+#       - scmd/scmd:{{ .Version }}-amd64
+#       - scmd/scmd:{{ .Version }}-arm64
+#   - name_template: scmd/scmd:latest
+#     image_templates:
+#       - scmd/scmd:latest-amd64
+#       - scmd/scmd:latest-arm64
 
 # GitHub release
 release:
