@@ -32,12 +32,13 @@ type Model struct {
 // Using official Qwen GGUF releases from HuggingFace
 var DefaultModels = []Model{
 	// Qwen2.5 official models (recommended)
+	// Note: Size is 0 (unknown) - will be determined from HTTP Content-Length during download
 	{
 		Name:        "qwen2.5-3b",
 		Variant:     "q4_k_m",
 		URL:         "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
-		Size:        2020000000, // ~2.0GB
-		Description: "Qwen2.5 3B - Good balance of speed and quality",
+		Size:        0, // Unknown - determined during download
+		Description: "Qwen2.5 3B (~2.1GB) - Good balance of speed and quality",
 		ContextSize: 32768,
 		ToolCalling: true,
 	},
@@ -45,8 +46,8 @@ var DefaultModels = []Model{
 		Name:        "qwen2.5-1.5b",
 		Variant:     "q4_k_m",
 		URL:         "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-		Size:        986000000, // ~1.0GB
-		Description: "Qwen2.5 1.5B - Fast and lightweight",
+		Size:        0, // Unknown - determined during download
+		Description: "Qwen2.5 1.5B (~1GB) - Fast and lightweight",
 		ContextSize: 32768,
 		ToolCalling: true,
 	},
@@ -54,8 +55,8 @@ var DefaultModels = []Model{
 		Name:        "qwen2.5-0.5b",
 		Variant:     "q4_k_m",
 		URL:         "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
-		Size:        397000000, // ~400MB
-		Description: "Qwen2.5 0.5B - Smallest, fastest option",
+		Size:        0, // Unknown - determined during download
+		Description: "Qwen2.5 0.5B (~500MB) - Smallest, fastest option",
 		ContextSize: 32768,
 		ToolCalling: true,
 	},
@@ -63,8 +64,8 @@ var DefaultModels = []Model{
 		Name:        "qwen2.5-7b",
 		Variant:     "q3_k_m",
 		URL:         "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q3_k_m.gguf",
-		Size:        3810000000, // ~3.8GB
-		Description: "Qwen2.5 7B - Best quality, needs more RAM",
+		Size:        0, // Unknown - determined during download
+		Description: "Qwen2.5 7B (~3.8GB) - Best quality, needs more RAM",
 		ContextSize: 32768,
 		ToolCalling: true,
 	},
@@ -136,7 +137,11 @@ func (m *ModelManager) GetModelPath(ctx context.Context, modelName string) (stri
 	}
 
 	// Download the model
-	fmt.Printf("Downloading %s (%s)...\n", model.Name, formatBytes(model.Size))
+	if model.Size > 0 {
+		fmt.Printf("Downloading %s (%s)...\n", model.Name, formatBytes(model.Size))
+	} else {
+		fmt.Printf("Downloading %s...\n", model.Name)
+	}
 	if err := m.downloadModel(ctx, model, modelPath); err != nil {
 		return "", err
 	}
