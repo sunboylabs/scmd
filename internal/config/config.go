@@ -46,6 +46,11 @@ type ModelsConfig struct {
 
 // DataDir returns the scmd data directory
 func DataDir() string {
+	// Check for environment variable first (useful for testing)
+	if dir := os.Getenv("SCMD_DATA_DIR"); dir != "" {
+		return dir
+	}
+
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".scmd")
 }
