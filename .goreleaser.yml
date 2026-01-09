@@ -52,7 +52,7 @@ archives:
       - CHANGELOG.md
       - completions/*
       # Bundle llama-server binary for this platform
-      - src: "dist/llama-server/{{ .Os }}-{{ .Arch }}/llama-server{{ if eq .Os \"windows\" }}.exe{{ end }}"
+      - src: ".llama-server/{{ .Os }}-{{ .Arch }}/llama-server{{ if eq .Os \"windows\" }}.exe{{ end }}"
         dst: bin/
         strip_parent: true
     # Default format is tar.gz, windows automatically uses zip
@@ -71,8 +71,8 @@ archives:
       - INSTALL.md
       - CHANGELOG.md
       - completions/*
-      # Bundle llama-server binary for this platform
-      - src: "dist/llama-server/{{ .Os }}-{{ .Arch }}/llama-server"
+      # Bundle llama-server binary for this platform (conditionally handle .exe for Windows)
+      - src: ".llama-server/{{ .Os }}-{{ .Arch }}/llama-server{{ if eq .Os \"windows\" }}.exe{{ end }}"
         dst: libexec/
         strip_parent: true
     formats:
@@ -165,7 +165,7 @@ nfpms:
       - src: ./INSTALL.md
         dst: /usr/share/doc/scmd/INSTALL.md
       # Bundle llama-server binary for this platform
-      - src: "dist/llama-server/linux-{{ .Arch }}/llama-server"
+      - src: ".llama-server/linux-{{ .Arch }}/llama-server"
         dst: /usr/lib/scmd/llama-server
         file_info:
           mode: 0755
