@@ -415,6 +415,16 @@ func preRun(cmd *cobra.Command, _ []string) error {
 	mockBackend := mock.New()
 	_ = backendRegistry.Register(mockBackend)
 
+	// Apply configured default backend (if set)
+	if cfg.Backends.Default != "" {
+		if err := backendRegistry.SetDefault(cfg.Backends.Default); err != nil {
+			// Log warning but don't fail - will fall back to availability check
+			if verbose {
+				fmt.Fprintf(os.Stderr, "Warning: configured backend '%s' not available, will auto-select\n", cfg.Backends.Default)
+			}
+		}
+	}
+
 	// Register built-in commands
 	if err := builtin.RegisterAll(cmdRegistry); err != nil {
 		return fmt.Errorf("register commands: %w", err)

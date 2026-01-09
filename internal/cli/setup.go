@@ -2,12 +2,14 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/scmd/scmd/internal/backend"
 	"github.com/scmd/scmd/internal/backend/llamacpp"
 	"github.com/scmd/scmd/internal/config"
 	"github.com/scmd/scmd/internal/ui"
@@ -311,23 +313,62 @@ func offerQuickTest(modelName string) {
 	// Run a quick test
 	fmt.Println()
 	fmt.Printf("%sRunning quick test...%s\n", colorCyan, colorReset)
-	fmt.Println()
-
-	// For the test, we'll just show what the output would look like
-	// In a real scenario, you'd invoke the actual command
 	fmt.Printf("%s> scmd /explain \"what is docker\"%s\n", colorYellow, colorReset)
 	fmt.Println()
-	fmt.Println("Docker is a platform for developing, shipping, and running")
-	fmt.Println("applications in containers. Containers package software with")
-	fmt.Println("all its dependencies, ensuring it runs consistently across")
-	fmt.Println("different environments...")
-	fmt.Println()
 
-	fmt.Printf("%s✓ Everything works perfectly!%s\n", colorGreen, colorReset)
+	// Actually test the backend
+	if err := testBackend(modelName); err != nil {
+		fmt.Printf("%s⚠️  Test failed: %v%s\n", colorYellow, err, colorReset)
+		fmt.Println()
+		fmt.Println("Don't worry! You can still use scmd.")
+		fmt.Println("Try running: scmd backends")
+		fmt.Println("To see available backends and troubleshoot.")
+	} else {
+		fmt.Printf("%s✓ Everything works perfectly!%s\n", colorGreen, colorReset)
+	}
 	fmt.Println()
 	fmt.Println("For more commands and options:")
 	fmt.Println("  scmd --help")
 	fmt.Println()
+}
+
+// testBackend tests the configured backend with a simple query
+func testBackend(modelName string) error {
+	// Initialize llamacpp backend
+	dataDir := config.DataDir()
+	llamaBackend := llamacpp.New(dataDir)
+
+	// Test if it's available
+	ctx := context.Background()
+
+	available, err := llamaBackend.IsAvailable(ctx)
+	if err != nil {
+		return fmt.Errorf("backend check failed: %w", err)
+	}
+
+	if !available {
+		return fmt.Errorf("llama-server not found - please install llama.cpp: brew install llama.cpp")
+	}
+
+	// Try a simple completion
+	req := &backend.CompletionRequest{
+		Prompt:      "What is Docker? Answer in one sentence.",
+		MaxTokens:   50,
+		Temperature: 0.7,
+	}
+
+	resp, err := llamaBackend.Complete(ctx, req)
+	if err != nil {
+		return fmt.Errorf("completion failed: %w", err)
+	}
+
+	// Print the response
+	if resp.Content != "" {
+		fmt.Println(strings.TrimSpace(resp.Content))
+		fmt.Println()
+	}
+
+	return nil
 }
 
 // IsFirstRun checks if this is the first run

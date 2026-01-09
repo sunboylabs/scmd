@@ -9,7 +9,7 @@ func Default() *Config {
 	return &Config{
 		Version: "1.0",
 		Backends: BackendsConfig{
-			Default: "local",
+			Default: "llamacpp",
 			Local: LocalBackendConfig{
 				Model:         "qwen2.5-coder-1.5b",
 				ContextLength: 0, // 0 = use model's native context size
