@@ -48,9 +48,18 @@ func (c *ReviewCommand) Examples() []string {
 
 // Validate validates arguments
 func (c *ReviewCommand) Validate(args *command.Args) error {
-	if len(args.Positional) == 0 && args.Options["stdin"] == "" {
-		return fmt.Errorf("provide a file or pipe input")
+	stdin, hasStdin := args.Options["stdin"]
+	stdinEmpty := !hasStdin || strings.TrimSpace(stdin) == ""
+
+	if len(args.Positional) == 0 && stdinEmpty {
+		return fmt.Errorf("no input provided\n\nUsage:\n  scmd review <file>\n  git diff | scmd review\n  cat file.py | scmd review")
 	}
+
+	// Check for empty stdin that was provided
+	if hasStdin && strings.TrimSpace(stdin) == "" && len(args.Positional) == 0 {
+		return fmt.Errorf("empty input provided - please provide code to review")
+	}
+
 	return nil
 }
 
@@ -60,6 +69,11 @@ func (c *ReviewCommand) Execute(
 	args *command.Args,
 	execCtx *command.ExecContext,
 ) (*command.Result, error) {
+	// Validate arguments first
+	if err := c.Validate(args); err != nil {
+		return command.NewErrorResult(err.Error()), nil
+	}
+
 	var content string
 	var subject string
 

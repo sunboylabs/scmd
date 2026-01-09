@@ -21,6 +21,7 @@ type OutputWriter struct {
 type OutputConfig struct {
 	FilePath string
 	Mode     *IOMode
+	Format   string // "text", "json", or "markdown"
 }
 
 // NewOutputWriter creates a new output writer

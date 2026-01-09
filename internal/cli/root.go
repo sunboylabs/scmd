@@ -255,7 +255,11 @@ func runBuiltinCommand(name string, args []string) error {
 	}
 
 	// Setup output
-	output, err := NewOutputWriter(&OutputConfig{FilePath: outputFlag, Mode: mode})
+	output, err := NewOutputWriter(&OutputConfig{
+		FilePath: outputFlag,
+		Mode:     mode,
+		Format:   formatFlag,
+	})
 	if err != nil {
 		return err
 	}
@@ -301,7 +305,10 @@ func runBuiltinCommand(name string, args []string) error {
 	}
 
 	if result.Output != "" {
-		output.WriteLine(result.Output)
+		// Format output based on format flag
+		if err := formatAndWriteOutput(output, result, formatFlag); err != nil {
+			return err
+		}
 	}
 
 	if !result.Success {
@@ -497,7 +504,11 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	}
 
 	// Setup output
-	output, err := NewOutputWriter(&OutputConfig{FilePath: outputFlag, Mode: mode})
+	output, err := NewOutputWriter(&OutputConfig{
+		FilePath: outputFlag,
+		Mode:     mode,
+		Format:   formatFlag,
+	})
 	if err != nil {
 		return err
 	}
@@ -542,7 +553,9 @@ func runRoot(cmd *cobra.Command, args []string) error {
 				return err
 			}
 			if result.Output != "" {
-				output.WriteLine(result.Output)
+				if err := formatAndWriteOutput(output, result, formatFlag); err != nil {
+					return err
+				}
 			}
 			if !result.Success {
 				return fmt.Errorf("%s", result.Error)
@@ -636,7 +649,9 @@ func runCommandWithStdin(ctx context.Context, cmdName string, args []string, std
 	}
 
 	if result.Output != "" {
-		output.WriteLine(result.Output)
+		if err := formatAndWriteOutput(output, result, formatFlag); err != nil {
+			return err
+		}
 	}
 
 	if !result.Success {
@@ -644,6 +659,33 @@ func runCommandWithStdin(ctx context.Context, cmdName string, args []string, std
 	}
 
 	return nil
+}
+
+// formatAndWriteOutput formats the output based on the format flag and writes it
+func formatAndWriteOutput(output *OutputWriter, result *command.Result, format string) error {
+	switch format {
+	case "json":
+		// Create a JSON structure for the result
+		jsonOutput := map[string]interface{}{
+			"success": result.Success,
+			"output":  result.Output,
+		}
+		if result.Error != "" {
+			jsonOutput["error"] = result.Error
+		}
+		if len(result.Suggestions) > 0 {
+			jsonOutput["suggestions"] = result.Suggestions
+		}
+		return output.WriteJSON(jsonOutput)
+	case "markdown":
+		// For markdown, wrap the output in a code block if it's not already markdown
+		if !strings.Contains(result.Output, "```") {
+			return output.WriteLine("```\n" + result.Output + "\n```")
+		}
+		return output.WriteLine(result.Output)
+	default: // "text"
+		return output.WriteLine(result.Output)
+	}
 }
 
 func runREPL(execCtx *command.ExecContext) error {
@@ -673,9 +715,19 @@ func runREPL(execCtx *command.ExecContext) error {
 func Execute() error {
 	// Intercept slash commands before cobra processes them
 	// Search all args for a slash command (not just position 1)
+	// BUT: Exclude paths that look like files (e.g., /tmp/file.py, /home/user/script.sh)
 	slashIndex := -1
 	for i := 1; i < len(os.Args); i++ {
-		if strings.HasPrefix(os.Args[i], "/") {
+		arg := os.Args[i]
+		if strings.HasPrefix(arg, "/") {
+			// Check if this looks like a file path vs a slash command
+			// File paths typically have:
+			// - Multiple slashes (e.g., /tmp/test.py)
+			// - Known file extensions
+			// - Exist on filesystem
+			if isLikelyFilePath(arg) {
+				continue
+			}
 			slashIndex = i
 			break
 		}
@@ -691,6 +743,26 @@ func Execute() error {
 	}
 
 	return rootCmd.Execute()
+}
+
+// isLikelyFilePath determines if a string starting with / is a file path vs a slash command
+func isLikelyFilePath(arg string) bool {
+	// If it contains more than one slash, it's likely a path
+	if strings.Count(arg, "/") > 1 {
+		return true
+	}
+
+	// If it has a file extension, it's likely a path
+	if strings.Contains(arg, ".") {
+		return true
+	}
+
+	// If the file exists on filesystem, it's definitely a path
+	if _, err := os.Stat(arg); err == nil {
+		return true
+	}
+
+	return false
 }
 
 // runSlashCommand handles /command style invocations
@@ -727,7 +799,11 @@ func runSlashCommand(cmd string, args []string) error {
 	}
 
 	// Setup output
-	output, err := NewOutputWriter(&OutputConfig{FilePath: outputFlag, Mode: mode})
+	output, err := NewOutputWriter(&OutputConfig{
+		FilePath: outputFlag,
+		Mode:     mode,
+		Format:   formatFlag,
+	})
 	if err != nil {
 		return err
 	}
@@ -787,7 +863,9 @@ func runSlashCommand(cmd string, args []string) error {
 	}
 
 	if result.Output != "" {
-		output.WriteLine(result.Output)
+		if err := formatAndWriteOutput(output, result, formatFlag); err != nil {
+			return err
+		}
 	}
 
 	if !result.Success {
