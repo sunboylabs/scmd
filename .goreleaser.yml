@@ -95,32 +95,33 @@ changelog:
     - title: Others
       order: 999
 
-# Homebrew tap
-brews:
-  - name: scmd
-    ids:
-      - homebrew
-    repository:
-      owner: sunboy
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
-    homepage: https://github.com/sunboy/scmd
-    description: "AI-powered slash commands for any terminal. Works offline by default."
-    license: MIT
-    commit_author:
-      name: scmd-bot
-      email: bot@scmd.dev
-    install: |
-      bin.install "scmd"
-      bash_completion.install "completions/scmd.bash" => "scmd"
-      zsh_completion.install "completions/scmd.zsh" => "_scmd"
-      fish_completion.install "completions/scmd.fish"
-    test: |
-      system "#{bin}/scmd", "--version"
-    dependencies:
-      - name: llama.cpp
-        type: optional
+# Homebrew tap (disabled - no credentials configured)
+# To enable: set HOMEBREW_TAP_GITHUB_TOKEN secret in GitHub repo settings
+# brews:
+#   - name: scmd
+#     ids:
+#       - homebrew
+#     repository:
+#       owner: sunboy
+#       name: homebrew-tap
+#       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+#     directory: Formula
+#     homepage: https://github.com/sunboy/scmd
+#     description: "AI-powered slash commands for any terminal. Works offline by default."
+#     license: MIT
+#     commit_author:
+#       name: scmd-bot
+#       email: bot@scmd.dev
+#     install: |
+#       bin.install "scmd"
+#       bash_completion.install "completions/scmd.bash" => "scmd"
+#       zsh_completion.install "completions/scmd.zsh" => "_scmd"
+#       fish_completion.install "completions/scmd.fish"
+#     test: |
+#       system "#{bin}/scmd", "--version"
+#     dependencies:
+#       - name: llama.cpp
+#         type: optional
 
 # Linux packages (deb, rpm, apk)
 nfpms:
