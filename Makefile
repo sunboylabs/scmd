@@ -37,8 +37,8 @@ test:
 
 # Run tests with short flag (for CI)
 test-short:
-	@echo "Running short tests..."
-	go test -short -race ./...
+	@echo "Running short tests (excluding e2e)..."
+	go test -short -race $(shell go list ./... | grep -v '/tests/e2e')
 
 # Run tests with verbose output
 test-v:

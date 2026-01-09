@@ -164,6 +164,10 @@ func TestIsFirstRun_WithSetupCompleted(t *testing.T) {
 
 // TestIsFirstRun_WithModelsDirectory tests first run when models exist
 func TestIsFirstRun_WithModelsDirectory(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
 	tmpDir := t.TempDir()
 
 	// Create models directory with a model
