@@ -26,14 +26,14 @@ jobs:
           go-version: '1.24'
           cache: true
 
+      - name: Build binary (required for E2E tests)
+        run: make build
+
       - name: Run tests
         run: make test
 
       - name: Run linters
         run: make lint
-
-      - name: Build binary
-        run: make build
 
       - name: Smoke test - version
         run: ./bin/scmd version
