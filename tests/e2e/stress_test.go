@@ -157,11 +157,14 @@ func TestStress_SustainedLoad(t *testing.T) {
 	close(done)
 	time.Sleep(100 * time.Millisecond) // Let goroutines finish
 
-	total := count + errors
-	errorRate := float64(errors) / float64(total) * 100
+	// Use atomic loads to prevent data race
+	finalCount := atomic.LoadInt64(&count)
+	finalErrors := atomic.LoadInt64(&errors)
+	total := finalCount + finalErrors
+	errorRate := float64(finalErrors) / float64(total) * 100
 
 	t.Logf("Sustained load: %d successful, %d errors (%.2f%% error rate) in %v",
-		count, errors, errorRate, duration)
+		finalCount, finalErrors, errorRate, duration)
 
 	if errorRate > 5 { // Allow 5% error rate
 		t.Errorf("error rate too high: %.2f%%", errorRate)
@@ -259,7 +262,9 @@ func TestStress_MemoryPressure(t *testing.T) {
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
 
-	allocMB := float64(m2.Alloc-m1.Alloc) / 1024 / 1024
+	// Use TotalAlloc for monotonically increasing measurement
+	// Alloc can decrease due to GC, causing underflow
+	allocMB := float64(m2.TotalAlloc-m1.TotalAlloc) / 1024 / 1024
 	t.Logf("Memory allocated: %.2f MB", allocMB)
 
 	// Check for memory leaks (should not grow excessively)
