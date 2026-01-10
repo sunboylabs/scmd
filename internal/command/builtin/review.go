@@ -9,6 +9,7 @@ import (
 
 	"github.com/scmd/scmd/internal/backend"
 	"github.com/scmd/scmd/internal/command"
+	"github.com/scmd/scmd/internal/templates"
 )
 
 // ReviewCommand implements /review
@@ -105,8 +106,50 @@ func (c *ReviewCommand) Execute(
 	// Get focus area if specified
 	focus := args.GetOption("focus")
 
-	// Build prompt
-	prompt := buildReviewPrompt(content, subject, focus)
+	// Check for template
+	templateName := args.GetOption("template")
+	var systemPrompt, prompt string
+
+	if templateName != "" {
+		// Load and execute template
+		mgr, err := templates.NewManager()
+		if err != nil {
+			return command.NewErrorResult(
+				fmt.Sprintf("failed to load template manager: %v", err),
+			), nil
+		}
+
+		// Detect language from filename or content
+		language := detectLanguage(subject, content)
+
+		templateData := map[string]interface{}{
+			"Code":     content,
+			"Language": language,
+			"Context":  focus,
+		}
+
+		var userPrompt string
+		systemPrompt, userPrompt, err = mgr.Execute(templateName, templateData)
+		if err != nil {
+			return command.NewErrorResult(
+				fmt.Sprintf("failed to execute template: %v", err),
+				fmt.Sprintf("Check template with: scmd template show %s", templateName),
+			), nil
+		}
+		prompt = userPrompt
+	} else {
+		// Build default prompt
+		prompt = buildReviewPrompt(content, subject, focus)
+		systemPrompt = `You are an expert code reviewer. Analyze code for:
+- Bugs and potential issues
+- Security vulnerabilities
+- Performance concerns
+- Code quality and readability
+- Best practices
+
+Provide constructive feedback with specific suggestions.
+Format your response in markdown with sections for each category.`
+	}
 
 	if execCtx.Backend == nil {
 		return command.NewErrorResult(
@@ -122,15 +165,7 @@ func (c *ReviewCommand) Execute(
 		Prompt:      prompt,
 		MaxTokens:   4096,
 		Temperature: 0.3,
-		SystemPrompt: `You are an expert code reviewer. Analyze code for:
-- Bugs and potential issues
-- Security vulnerabilities
-- Performance concerns
-- Code quality and readability
-- Best practices
-
-Provide constructive feedback with specific suggestions.
-Format your response in markdown with sections for each category.`,
+		SystemPrompt: systemPrompt,
 	}
 
 	resp, err := execCtx.Backend.Complete(ctx, req)
@@ -140,6 +175,8 @@ Format your response in markdown with sections for each category.`,
 		), nil
 	}
 
+	// The response is already in markdown format from the LLM
+	// It will be formatted by the CLI output handler
 	return command.NewResult(resp.Content), nil
 }
 
@@ -157,4 +194,52 @@ func buildReviewPrompt(content, subject, focus string) string {
 	sb.WriteString("\n```")
 
 	return sb.String()
+}
+
+func detectLanguage(filename, content string) string {
+	// Try to detect from filename extension
+	ext := filepath.Ext(filename)
+	switch ext {
+	case ".go":
+		return "go"
+	case ".py":
+		return "python"
+	case ".js":
+		return "javascript"
+	case ".ts":
+		return "typescript"
+	case ".java":
+		return "java"
+	case ".c", ".h":
+		return "c"
+	case ".cpp", ".cc", ".hpp":
+		return "cpp"
+	case ".rs":
+		return "rust"
+	case ".rb":
+		return "ruby"
+	case ".php":
+		return "php"
+	case ".swift":
+		return "swift"
+	case ".kt":
+		return "kotlin"
+	case ".sh", ".bash":
+		return "bash"
+	case ".sql":
+		return "sql"
+	case ".yaml", ".yml":
+		return "yaml"
+	case ".json":
+		return "json"
+	case ".xml":
+		return "xml"
+	case ".html":
+		return "html"
+	case ".css":
+		return "css"
+	}
+
+	// Fallback to auto-detect
+	return "auto-detect"
 }

@@ -67,6 +67,9 @@ See [docs/architecture/STABILITY.md](docs/architecture/STABILITY.md) for the com
 ## Features
 
 - **Offline-First** - llama.cpp with local Qwen models, no API keys required
+- **Interactive Conversations** - Multi-turn chat with context retention and searchable history
+- **Beautiful Output** - Markdown rendering with syntax highlighting, multiple themes
+- **Template System** - Customizable prompts for security, performance, documentation reviews
 - **Interactive Setup Wizard** - Beautiful guided setup on first run (~2 minutes)
 - **Man Page Integration** - `/cmd` reads man pages to generate exact commands
 - **Smart Model Selection** - Choose Fast (0.5B), Balanced (1.5B), Best (3B), or Premium (7B)
@@ -321,6 +324,94 @@ scmd setup --force
 ```
 
 **Pro Tip:** All models run 100% offline with GPU acceleration when available. No API keys needed!
+
+## Interactive Chat Mode
+
+Have extended AI conversations with full context retention. scmd remembers your entire chat history, letting you ask follow-up questions and build on previous discussions.
+
+### Quick Start
+
+```bash
+# Start a new chat
+scmd chat
+
+# Use a specific model
+scmd chat --model qwen2.5-7b
+
+# Resume a previous conversation
+scmd chat --continue abc123
+```
+
+### Example Session
+
+```bash
+$ scmd chat
+💬 Conversation: a3f2b1c4
+🔧 Model: qwen2.5-1.5b
+
+You: How do I create a REST API in Go?
+🤖 Assistant: I'll help you create a REST API in Go...
+
+You: Can you show me how to add authentication?
+🤖 Assistant: Of course! Building on the previous example...
+[Full context from previous messages maintained]
+
+You: What about rate limiting?
+🤖 Assistant: [Continues with complete context...]
+
+[Press Ctrl+D to exit]
+👋 Conversation saved. Use 'scmd chat --continue a3f2b1c4' to resume.
+```
+
+### Managing Conversations
+
+```bash
+# List all conversations
+scmd history list
+
+# Example output:
+#  1. [a3f2b1c4] How do I create a REST API...
+#     Model: qwen2.5-1.5b | Messages: 6 | Updated: Jan 10, 14:23
+#  2. [b7d3e5a1] Docker container basics
+#     Model: qwen2.5-3b | Messages: 12 | Updated: Jan 09, 16:45
+
+# Show conversation details
+scmd history show a3f2b1c4
+
+# Search conversations
+scmd history search "docker"
+
+# Delete a conversation
+scmd history delete a3f2b1c4
+
+# Clear all history
+scmd history clear
+```
+
+### In-Chat Commands
+
+While in a chat session:
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show available commands |
+| `/clear` | Clear context (keeps history) |
+| `/info` | Show conversation info |
+| `/save` | Force save conversation |
+| `/export` | Export to markdown |
+| `/model <name>` | Switch model |
+| `/exit` or `Ctrl+D` | Exit session |
+
+### Features
+
+- ✅ **Context Retention** - Full conversation history maintained
+- ✅ **Auto-Save** - Every message saved automatically
+- ✅ **Resume Anytime** - Pick up where you left off
+- ✅ **Search History** - Find past conversations
+- ✅ **Export to Markdown** - Share conversations
+- ✅ **Model Switching** - Change models mid-conversation
+
+Conversations stored in `~/.scmd/conversations.db` (SQLite).
 
 ## Slash Commands
 
@@ -652,6 +743,157 @@ Host on GitHub, GitLab, or any HTTP server, then:
 scmd repo add myrepo https://raw.githubusercontent.com/you/my-commands/main
 ```
 
+## Template System
+
+Customize prompts for specialized workflows. Templates standardize reviews for security, performance, documentation, and more.
+
+### Quick Start
+
+```bash
+# List built-in templates
+scmd template list
+
+#  📋 security-review (v1.0)
+#     OWASP Top 10 focused security analysis
+#     Tags: security, owasp
+#     Compatible: review, explain
+
+#  📋 performance (v1.0)
+#     Performance optimization and bottleneck analysis
+#     Tags: performance, optimization
+#     Compatible: review, explain
+
+#  📋 beginner-explain (v1.0)
+#     Explain code to beginners with simple language
+#     Tags: education, beginner
+#     Compatible: explain
+
+# Use a template
+scmd review auth.js --template security-review
+scmd explain quicksort.py --template beginner-explain
+```
+
+### Built-in Templates
+
+scmd includes 6 professional templates:
+
+| Template | Use Case | Example |
+|----------|----------|---------|
+| **security-review** | OWASP Top 10, vulnerability scanning | `scmd review auth.js --template security-review` |
+| **performance** | Bottlenecks, Big O analysis | `scmd review algorithm.py --template performance` |
+| **api-design** | REST best practices, HTTP methods | `scmd review api.go --template api-design` |
+| **testing** | Test coverage, edge cases | `scmd review service.ts --template testing` |
+| **documentation** | Doc generation and review | `scmd explain utils.rs --template documentation` |
+| **beginner-explain** | Beginner-friendly explanations | `scmd explain recursion.py --template beginner-explain` |
+
+### Template Details
+
+```bash
+# View template details
+scmd template show security-review
+
+#  📋 Template: security-review (v1.0)
+#
+#  Author: scmd
+#  Description: OWASP Top 10 focused security analysis
+#
+#  Tags: security, owasp, review
+#  Compatible Commands: review, explain
+#
+#  Variables:
+#    - Language: Programming language (auto-detect)
+#    - Code: Code to review (required)
+#    - Context: Additional context
+#
+#  Recommended Models: qwen2.5-7b, gpt-4
+#
+#  Examples:
+#    Review authentication code
+#    $ scmd review login.js --template security-review
+
+# Search templates
+scmd template search security
+
+# Export template for sharing
+scmd template export security-review > security.yaml
+```
+
+### Creating Custom Templates
+
+Templates are YAML files with a simple structure:
+
+```yaml
+name: team-standards
+version: "1.0"
+author: "Your Team"
+description: "Team coding standards review"
+tags:
+  - team
+  - standards
+compatible_commands:
+  - review
+
+system_prompt: |
+  You are a code reviewer for our team.
+  Focus on our coding standards and best practices.
+
+user_prompt_template: |
+  Review this {{.Language}} code:
+
+  ```{{.Language}}
+  {{.Code}}
+  ```
+
+  Check for:
+  1. Team coding standards
+  2. Error handling patterns
+  3. Code clarity
+
+variables:
+  - name: Language
+    description: "Programming language"
+    default: "auto-detect"
+  - name: Code
+    description: "Code to review"
+    required: true
+
+recommended_models:
+  - qwen2.5-7b
+```
+
+### Template Management
+
+```bash
+# Create interactive template
+scmd template create my-template
+
+# Import from file
+scmd template import team-standards.yaml
+
+# Delete template
+scmd template delete my-template
+
+# Export for sharing
+scmd template export team-standards > share.yaml
+```
+
+### Advanced Usage
+
+```bash
+# Use in chat sessions
+scmd chat
+You: Review this auth code using the security-review template
+[Detailed security analysis with OWASP focus]
+
+# Pipe input with templates
+git diff | scmd review --template security-review
+
+# Combine with other features
+scmd review --template performance --model qwen2.5-7b --format json
+```
+
+Templates stored in `~/.scmd/templates/` as YAML files - easily version controlled and shared with teams.
+
 ## Configuration
 
 Configuration is stored in `~/.scmd/config.yaml`:
@@ -668,9 +910,22 @@ backends:
   openai:
     model: gpt-4o-mini
 
+# Chat configuration (v0.2.0+)
+chat:
+  max_context_messages: 20    # Max messages in context
+  auto_save: true             # Auto-save after each message
+  auto_title: true            # Auto-generate titles
+
+# UI configuration (v0.2.0+)
 ui:
-  color: true
-  spinner: true
+  colors: true                # Enable colored output
+  style: auto                 # Theme: auto, dark, light, notty
+  streaming: true             # Enable streaming output
+  verbose: false              # Verbose mode
+
+# Template configuration (v0.2.0+)
+templates:
+  directory: ~/.scmd/templates  # Template storage
 ```
 
 ## CLI Reference
@@ -683,6 +938,26 @@ Commands:
   review      Review code for issues
   config      View/modify configuration
   backends    List available backends
+
+  chat        Start interactive conversation         [v0.2.0+]
+    --continue <id>  Resume conversation
+    --model <name>   Use specific model
+
+  history     Manage conversation history             [v0.2.0+]
+    list      List recent conversations
+    show      Show conversation details
+    search    Search conversations
+    delete    Delete a conversation
+    clear     Clear all conversations
+
+  template    Manage prompt templates                 [v0.2.0+]
+    list      List available templates
+    show      Show template details
+    create    Create custom template
+    delete    Delete template
+    search    Search templates
+    export    Export template to YAML
+    import    Import template from file
 
   models      Manage local LLM models
     list      List available models
@@ -726,6 +1001,7 @@ Flags:
   -f, --format    Output format (text, json, markdown)
   -q, --quiet     Suppress progress
   -v, --verbose   Verbose output
+      --template  Use a prompt template (for explain/review)  [v0.2.0+]
 ```
 
 ## Environment Variables

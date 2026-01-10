@@ -106,6 +106,11 @@ func (c *Config) GetInt(key string) int {
 	}
 }
 
+// GetDataDir returns the scmd data directory (exported version of DataDir)
+func GetDataDir() string {
+	return DataDir()
+}
+
 // Set sets a configuration value
 func (c *Config) Set(key string, value interface{}) error {
 	switch key {

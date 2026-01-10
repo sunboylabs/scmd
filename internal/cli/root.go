@@ -96,6 +96,9 @@ func init() {
 	rootCmd.AddCommand(slashCmd)
 	rootCmd.AddCommand(modelsCmd)
 	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(chatCmd)      // New chat command
+	rootCmd.AddCommand(historyCmd)   // New history command
+	rootCmd.AddCommand(templateCmd)  // New template command
 	rootCmd.AddCommand(SetupCommand())
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -195,9 +198,10 @@ var explainCmd = &cobra.Command{
 	Aliases: []string{"e", "what"},
 	Example: `  scmd explain main.go
   scmd explain "what is a goroutine"
-  cat file.py | scmd explain`,
+  cat file.py | scmd explain
+  scmd explain loop.py --template beginner-explain`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runBuiltinCommand("explain", args)
+		return runBuiltinCommandWithCmd(cmd, "explain", args)
 	},
 }
 
@@ -207,10 +211,17 @@ var reviewCmd = &cobra.Command{
 	Short:   "Review code for issues and improvements",
 	Aliases: []string{"r"},
 	Example: `  scmd review main.go
-  git diff | scmd review`,
+  git diff | scmd review
+  scmd review auth.py --template security-review`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runBuiltinCommand("review", args)
+		return runBuiltinCommandWithCmd(cmd, "review", args)
 	},
+}
+
+func init() {
+	// Add --template flag to review and explain commands
+	reviewCmd.Flags().String("template", "", "Use a prompt template")
+	explainCmd.Flags().String("template", "", "Use a prompt template")
 }
 
 // configCmd wraps the builtin config command
@@ -240,6 +251,10 @@ var killProcessCmd = &cobra.Command{
 }
 
 func runBuiltinCommand(name string, args []string) error {
+	return runBuiltinCommandWithCmd(nil, name, args)
+}
+
+func runBuiltinCommandWithCmd(cmd *cobra.Command, name string, args []string) error {
 	ctx := context.Background()
 	mode := DetectIOMode()
 
@@ -296,6 +311,13 @@ func runBuiltinCommand(name string, args []string) error {
 	cmdArgs.Positional = args
 	if stdinContent != "" {
 		cmdArgs.Options["stdin"] = stdinContent
+	}
+
+	// Pass --template flag if present (for review and explain commands)
+	if cmd != nil {
+		if templateFlag, _ := cmd.Flags().GetString("template"); templateFlag != "" {
+			cmdArgs.Options["template"] = templateFlag
+		}
 	}
 
 	// Execute
@@ -684,8 +706,24 @@ func formatAndWriteOutput(output *OutputWriter, result *command.Result, format s
 		}
 		return output.WriteLine(result.Output)
 	default: // "text"
+		// Check if the output looks like markdown (has headers, code blocks, etc.)
+		if looksLikeMarkdown(result.Output) {
+			return output.WriteMarkdown(result.Output)
+		}
 		return output.WriteLine(result.Output)
 	}
+}
+
+// looksLikeMarkdown checks if a string appears to be markdown
+func looksLikeMarkdown(s string) bool {
+	// Check for common markdown patterns
+	return strings.Contains(s, "```") ||
+		strings.Contains(s, "##") ||
+		strings.Contains(s, "**") ||
+		strings.Contains(s, "- ") ||
+		strings.Contains(s, "* ") ||
+		strings.Contains(s, "`") ||
+		strings.Contains(s, "[") && strings.Contains(s, "](")
 }
 
 func runREPL(execCtx *command.ExecContext) error {

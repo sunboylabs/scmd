@@ -9,6 +9,7 @@ import (
 
 	"github.com/scmd/scmd/internal/backend"
 	"github.com/scmd/scmd/internal/command"
+	"github.com/scmd/scmd/internal/templates"
 )
 
 // ExplainCommand implements /explain
@@ -104,8 +105,43 @@ func (c *ExplainCommand) Execute(
 		}
 	}
 
-	// Build prompt
-	prompt := buildExplainPrompt(content, subject)
+	// Check for template
+	templateName := args.GetOption("template")
+	var systemPrompt, prompt string
+
+	if templateName != "" {
+		// Load and execute template
+		mgr, err := templates.NewManager()
+		if err != nil {
+			return command.NewErrorResult(
+				fmt.Sprintf("failed to load template manager: %v", err),
+			), nil
+		}
+
+		// Detect language from filename or content
+		language := detectLanguage(subject, content)
+
+		templateData := map[string]interface{}{
+			"Code":     content,
+			"Language": language,
+			"FocusOn":  args.GetOption("focus"),
+		}
+
+		var userPrompt string
+		systemPrompt, userPrompt, err = mgr.Execute(templateName, templateData)
+		if err != nil {
+			return command.NewErrorResult(
+				fmt.Sprintf("failed to execute template: %v", err),
+				fmt.Sprintf("Check template with: scmd template show %s", templateName),
+			), nil
+		}
+		prompt = userPrompt
+	} else {
+		// Build default prompt
+		prompt = buildExplainPrompt(content, subject)
+		systemPrompt = `You are a helpful programming assistant. Explain code and concepts clearly and concisely.
+Use examples where helpful. Format your response in markdown.`
+	}
 
 	// Check if backend is available
 	if execCtx.Backend == nil {
@@ -124,8 +160,7 @@ func (c *ExplainCommand) Execute(
 		Prompt:      prompt,
 		MaxTokens:   2048,
 		Temperature: 0.3,
-		SystemPrompt: `You are a helpful programming assistant. Explain code and concepts clearly and concisely.
-Use examples where helpful. Format your response in markdown.`,
+		SystemPrompt: systemPrompt,
 	}
 
 	resp, err := execCtx.Backend.Complete(ctx, req)

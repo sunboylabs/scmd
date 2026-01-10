@@ -6,15 +6,18 @@ import (
 	"io"
 	"os"
 	"sync"
+
+	"github.com/scmd/scmd/internal/output"
 )
 
 // OutputWriter handles output to various destinations
 type OutputWriter struct {
-	mu       sync.Mutex
-	writer   io.Writer
-	buffered *bufio.Writer
-	file     *os.File
-	mode     *IOMode
+	mu        sync.Mutex
+	writer    io.Writer
+	buffered  *bufio.Writer
+	file      *os.File
+	mode      *IOMode
+	formatter *output.Formatter
 }
 
 // OutputConfig configures the output writer
@@ -38,10 +41,21 @@ func NewOutputWriter(cfg *OutputConfig) (*OutputWriter, error) {
 		file = f
 	}
 
+	// Initialize formatter if appropriate
+	var formatter *output.Formatter
+	if cfg.Mode != nil && cfg.Mode.StdoutIsTTY && !cfg.Mode.PipeOut {
+		// Only use formatter for TTY output
+		f, err := output.GetDefaultFormatter()
+		if err == nil {
+			formatter = f
+		}
+	}
+
 	ow := &OutputWriter{
-		writer: writer,
-		mode:   cfg.Mode,
-		file:   file,
+		writer:    writer,
+		mode:      cfg.Mode,
+		file:      file,
+		formatter: formatter,
 	}
 
 	// Use buffered writer for piped output or file output
@@ -107,4 +121,19 @@ func (w *OutputWriter) Close() error {
 // IsTTY returns true if output is a terminal
 func (w *OutputWriter) IsTTY() bool {
 	return w.mode != nil && w.mode.StdoutIsTTY
+}
+
+// WriteMarkdown writes markdown content with formatting if TTY
+func (w *OutputWriter) WriteMarkdown(markdown string) error {
+	if w.formatter != nil {
+		// Apply markdown formatting for TTY
+		rendered, err := w.formatter.Render(markdown)
+		if err != nil {
+			// Fall back to plain markdown on error
+			return w.WriteLine(markdown)
+		}
+		return w.Write(rendered)
+	}
+	// Plain text for non-TTY
+	return w.WriteLine(markdown)
 }
