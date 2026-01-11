@@ -17,8 +17,8 @@ type Backend struct {
 // New creates a new mock backend
 func New() *Backend {
 	return &Backend{
-		name:     "mock",
-		response: "Mock response",
+		name: "mock",
+		response: "# Code Explanation\n\nThis is a **mock response** with markdown formatting.\n\n## Key Points\n\n- First important point\n- Second important point with `inline code`\n- Third point\n\n## Code Example\n\n```python\ndef example():\n    print(\"Hello, world!\")\n```\n\n> Note: This is a blockquote for emphasis.",
 	}
 }
 

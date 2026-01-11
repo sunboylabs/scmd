@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-01-11
+
+### Fixed
+- **CRITICAL**: Replaced CGO-dependent SQLite (github.com/mattn/go-sqlite3) with pure Go implementation (modernc.org/sqlite)
+  - Fixes "Binary was compiled with 'CGO_ENABLED=0'" error
+  - Enables chat and history features to work in all environments
+  - Removes external C library dependencies
+  - Improves cross-platform compatibility
+- Fixed SQLite driver name from "sqlite3" to "sqlite" for modernc.org/sqlite compatibility
+
+### Changed
+- Binary size optimized (25.6 MB vs 43.8 MB in initial v0.4.0)
+- Improved error messages for chat/history commands
+- Enhanced database connection reliability
+
+### Verified
+- Chat feature: Multi-turn conversations with context retention ✓
+- History management: list, show, search, continue commands ✓
+- Template system: All 6 templates working correctly ✓
+- Shareable repos: Slash commands and repository system intact ✓
+- Markdown output: Glamour-based rendering working as designed ✓
+
 ## [0.4.0] - 2026-01-10
 
 ### Added
@@ -128,7 +150,8 @@ To create a new release:
 
 ## Version History
 
-[Unreleased]: https://github.com/sunboy/scmd/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/sunboy/scmd/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/sunboy/scmd/releases/tag/v0.4.1
 [0.4.0]: https://github.com/sunboy/scmd/releases/tag/v0.4.0
 [0.3.1]: https://github.com/sunboy/scmd/releases/tag/v0.3.1
 [0.3.0]: https://github.com/sunboy/scmd/releases/tag/v0.3.0
