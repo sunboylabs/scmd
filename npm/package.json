@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sunboy/scmd.git"
+    "url": "https://github.com/sunboylabs/scmd.git"
   },
   "keywords": [
     "ai",
@@ -30,9 +30,9 @@
   "author": "scmd team",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sunboy/scmd/issues"
+    "url": "https://github.com/sunboylabs/scmd/issues"
   },
-  "homepage": "https://github.com/sunboy/scmd#readme",
+  "homepage": "https://github.com/sunboylabs/scmd#readme",
   "engines": {
     "node": ">=14.0.0"
   },

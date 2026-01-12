@@ -7,7 +7,7 @@ All deployment targets are live and verified working!
 ### Deployment Verification Results
 
 #### 1. GitHub Release ✅
-- **URL:** https://github.com/sunboy/scmd/releases/tag/v0.4.0
+- **URL:** https://github.com/sunboylabs/scmd/releases/tag/v0.4.0
 - **Status:** Published successfully
 - **Assets:** 13 binary files for all platforms
   - macOS (universal binary)
@@ -43,13 +43,13 @@ npm install -g scmd-cli
 \`\`\`
 
 #### 4. Go Module ✅
-- **Module:** github.com/sunboy/scmd
+- **Module:** github.com/sunboylabs/scmd
 - **Tag:** v0.4.0
 - **Status:** Available for installation
 
 **Installation Command:**
 \`\`\`bash
-go install github.com/sunboy/scmd/cmd/scmd@v0.4.0
+go install github.com/sunboylabs/scmd/cmd/scmd@v0.4.0
 \`\`\`
 
 ---
@@ -88,7 +88,7 @@ npm publish --access public
 
 ## GitHub Actions Workflow Status
 
-**Latest Run:** https://github.com/sunboy/scmd/actions/runs/20881654714
+**Latest Run:** https://github.com/sunboylabs/scmd/actions/runs/20881654714
 
 **Jobs:**
 - ✅ Run Tests - All tests passed
@@ -108,7 +108,7 @@ All installation methods verified working:
 ### Homebrew (macOS)
 \`\`\`bash
 $ brew install sunboy/tap/scmd
-==> Downloading https://github.com/sunboy/scmd/releases/download/v0.4.0/scmd_0.4.0_macOS_all_brew.tar.gz
+==> Downloading https://github.com/sunboylabs/scmd/releases/download/v0.4.0/scmd_0.4.0_macOS_all_brew.tar.gz
 ==> Installing scmd from sunboy/tap
 🍺  /opt/homebrew/Cellar/scmd/0.4.0: X files, XXX
 \`\`\`
@@ -121,8 +121,8 @@ added 1 package in Xs
 
 ### Go
 \`\`\`bash
-$ go install github.com/sunboy/scmd/cmd/scmd@v0.4.0
-go: downloading github.com/sunboy/scmd v0.4.0
+$ go install github.com/sunboylabs/scmd/cmd/scmd@v0.4.0
+go: downloading github.com/sunboylabs/scmd v0.4.0
 \`\`\`
 
 ---
@@ -181,15 +181,15 @@ brew install sunboy/tap/scmd
 npm install -g scmd-cli
 
 # Go
-go install github.com/sunboy/scmd/cmd/scmd@v0.4.0
+go install github.com/sunboylabs/scmd/cmd/scmd@v0.4.0
 
 # Direct download
-# Visit: https://github.com/sunboy/scmd/releases/tag/v0.4.0
+# Visit: https://github.com/sunboylabs/scmd/releases/tag/v0.4.0
 \`\`\`
 
 ---
 
 **Deployment completed:** 2026-01-10  
-**Release URL:** https://github.com/sunboy/scmd/releases/tag/v0.4.0  
+**Release URL:** https://github.com/sunboylabs/scmd/releases/tag/v0.4.0  
 **Status:** 🚀 LIVE AND READY FOR USERS
 

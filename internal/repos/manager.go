@@ -237,7 +237,7 @@ func (m *Manager) Load() error {
 			// Add default repos
 			m.repos["official"] = &Repository{
 				Name:        "official",
-				URL:         "https://raw.githubusercontent.com/scmd/commands/main",
+				URL:         "https://raw.githubusercontent.com/sunboylabs/commands/main",
 				Description: "Official scmd commands",
 				Enabled:     true,
 			}

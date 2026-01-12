@@ -504,7 +504,7 @@ Install additional commands from the official repository:
 
 ```bash
 # Install popular commands
-scmd repo add official https://raw.githubusercontent.com/scmd/commands/main
+scmd repo add official https://raw.githubusercontent.com/sunboylabs/commands/main
 scmd repo install official/review        # Code review
 scmd repo install official/commit        # Git commit messages
 scmd repo install official/summarize     # Summarize text
