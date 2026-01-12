@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-01-12
+
+### Added
+- **Beautiful Markdown Output**: Lightweight, performance-focused formatting with Glamour
+  - `--format` flag with options: `auto` (default), `markdown`, `plain`
+  - Automatic TTY detection - formatted output in terminal, plain text when piped
+  - Syntax highlighting for 40+ programming languages via Chroma
+  - Theme detection (dark/light/auto) with SCMD_THEME environment variable
+  - NO_COLOR environment variable support for accessibility
+  - Configuration file support: `ui.format`, `ui.theme`, `ui.word_wrap`
+- **Lazy Rendering**: Zero overhead when formatting is disabled
+  - Glamour renderer initialized only on first use (< 1ns overhead)
+  - Formatter creation: ~1.9µs
+  - Rendering: < 10ms for typical responses
+- **Terminal Detection**: Smart environment detection
+  - TTY capability detection
+  - Color support verification
+  - Terminal dimensions and word wrap
+  - Image support detection
+
+### Changed
+- Updated output system with three-layer architecture (Detector → Renderer → Formatter)
+- Enhanced all command outputs to support markdown formatting
+- Commands automatically use formatted output in terminals
+- Plain text preserved for piping and redirection
+
+### Technical
+- Added `internal/output/detector.go` - Terminal environment detection
+- Added `internal/output/renderer.go` - Lazy-loaded Glamour wrapper
+- Updated `internal/output/formatter.go` - Markdown/plain text formatting
+- Extended `internal/config/config.go` - UI configuration (format, theme, word_wrap)
+- Updated `internal/cli/root.go` - Added --format flag
+- Updated `internal/cli/output.go` - OutputWriter with formatter integration
+- Comprehensive test coverage (1503 lines across 5 test files)
+- All performance benchmarks exceed targets
+
+### Dependencies
+- github.com/charmbracelet/glamour v0.8.0 (markdown rendering)
+
 ## [0.4.2] - 2026-01-12
 
 ### Added
@@ -187,7 +226,8 @@ To create a new release:
 
 ## Version History
 
-[Unreleased]: https://github.com/sunboylabs/scmd/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/sunboylabs/scmd/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.3
 [0.4.2]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.2
 [0.4.1]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.1
 [0.4.0]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.0

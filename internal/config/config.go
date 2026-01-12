@@ -33,9 +33,12 @@ type LocalBackendConfig struct {
 
 // UIConfig for UI preferences
 type UIConfig struct {
-	Streaming bool `mapstructure:"streaming"`
-	Colors    bool `mapstructure:"colors"`
-	Verbose   bool `mapstructure:"verbose"`
+	Streaming bool   `mapstructure:"streaming"`
+	Colors    bool   `mapstructure:"colors"`
+	Verbose   bool   `mapstructure:"verbose"`
+	Format    string `mapstructure:"format"`    // auto, markdown, plain
+	Theme     string `mapstructure:"theme"`     // auto, dark, light
+	WordWrap  int    `mapstructure:"word_wrap"` // word wrap width, 0 for no wrap
 }
 
 // ModelsConfig for model management
@@ -69,6 +72,10 @@ func (c *Config) GetString(key string) string {
 		return c.Backends.Local.Model
 	case "models.directory":
 		return c.Models.Directory
+	case "ui.format":
+		return c.UI.Format
+	case "ui.theme":
+		return c.UI.Theme
 	default:
 		return ""
 	}
@@ -101,6 +108,8 @@ func (c *Config) GetInt(key string) int {
 		return c.Backends.Local.GPULayers
 	case "backends.local.threads":
 		return c.Backends.Local.Threads
+	case "ui.word_wrap":
+		return c.UI.WordWrap
 	default:
 		return 0
 	}
@@ -150,6 +159,24 @@ func (c *Config) Set(key string, value interface{}) error {
 			return nil
 		}
 		return fmt.Errorf("value must be a boolean")
+	case "ui.format":
+		if v, ok := value.(string); ok {
+			c.UI.Format = v
+			return nil
+		}
+		return fmt.Errorf("value must be a string")
+	case "ui.theme":
+		if v, ok := value.(string); ok {
+			c.UI.Theme = v
+			return nil
+		}
+		return fmt.Errorf("value must be a string")
+	case "ui.word_wrap":
+		if v, ok := value.(int); ok {
+			c.UI.WordWrap = v
+			return nil
+		}
+		return fmt.Errorf("value must be an integer")
 	case "models.auto_download":
 		if v, ok := value.(bool); ok {
 			c.Models.AutoDownload = v

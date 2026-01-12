@@ -75,7 +75,7 @@ func init() {
 	// Pipe/prompt flags
 	rootCmd.PersistentFlags().StringVarP(&promptFlag, "prompt", "p", "", "inline prompt")
 	rootCmd.PersistentFlags().StringVarP(&outputFlag, "output", "o", "", "output file")
-	rootCmd.PersistentFlags().StringVarP(&formatFlag, "format", "f", "text", "output format: text, json, markdown")
+	rootCmd.PersistentFlags().StringVarP(&formatFlag, "format", "f", "auto", "output format: auto, markdown, plain")
 	rootCmd.PersistentFlags().BoolVarP(&quietFlag, "quiet", "q", false, "suppress progress")
 	rootCmd.PersistentFlags().StringArrayVarP(&contextFlags, "context", "c", nil, "context files")
 
@@ -274,6 +274,7 @@ func runBuiltinCommandWithCmd(cmd *cobra.Command, name string, args []string) er
 		FilePath: outputFlag,
 		Mode:     mode,
 		Format:   formatFlag,
+		Config:   cfg,
 	})
 	if err != nil {
 		return err
@@ -370,7 +371,7 @@ func preRun(cmd *cobra.Command, _ []string) error {
 
 	// Validate format flag if provided
 	if formatFlag != "" {
-		validFormats := []string{"text", "json", "markdown"}
+		validFormats := []string{"auto", "markdown", "plain"}
 		valid := false
 		for _, f := range validFormats {
 			if formatFlag == f {
@@ -379,7 +380,7 @@ func preRun(cmd *cobra.Command, _ []string) error {
 			}
 		}
 		if !valid {
-			return fmt.Errorf("invalid format '%s': must be one of: text, json, markdown", formatFlag)
+			return fmt.Errorf("invalid format '%s': must be one of: auto, markdown, plain", formatFlag)
 		}
 	}
 
@@ -530,6 +531,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		FilePath: outputFlag,
 		Mode:     mode,
 		Format:   formatFlag,
+		Config:   cfg,
 	})
 	if err != nil {
 		return err
@@ -841,6 +843,7 @@ func runSlashCommand(cmd string, args []string) error {
 		FilePath: outputFlag,
 		Mode:     mode,
 		Format:   formatFlag,
+		Config:   cfg,
 	})
 	if err != nil {
 		return err

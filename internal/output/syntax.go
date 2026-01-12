@@ -235,7 +235,7 @@ func HighlightJSON(json string) (string, error) {
 // GetDefaultHighlighter returns a highlighter with default settings
 func GetDefaultHighlighter() *SyntaxHighlighter {
 	// Detect terminal theme
-	style := detectStyle()
+	style := DetectTheme()
 	if style == "light" {
 		return NewSyntaxHighlighter("github")
 	}

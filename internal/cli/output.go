@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/scmd/scmd/internal/config"
 	"github.com/scmd/scmd/internal/output"
 )
 
@@ -22,9 +23,10 @@ type OutputWriter struct {
 
 // OutputConfig configures the output writer
 type OutputConfig struct {
-	FilePath string
-	Mode     *IOMode
-	Format   string // "text", "json", or "markdown"
+	FilePath   string
+	Mode       *IOMode
+	Format     string         // "auto", "markdown", or "plain"
+	Config     *config.Config // Optional config for theme and word wrap
 }
 
 // NewOutputWriter creates a new output writer
@@ -41,11 +43,34 @@ func NewOutputWriter(cfg *OutputConfig) (*OutputWriter, error) {
 		file = f
 	}
 
-	// Initialize formatter if appropriate
+	// Initialize formatter based on format flag and config
 	var formatter *output.Formatter
-	if cfg.Mode != nil && cfg.Mode.StdoutIsTTY && !cfg.Mode.PipeOut {
-		// Only use formatter for TTY output
-		f, err := output.GetDefaultFormatter()
+	shouldFormat := cfg.Mode != nil && cfg.Mode.StdoutIsTTY && !cfg.Mode.PipeOut
+
+	if shouldFormat || cfg.Format == "markdown" {
+		// Use format flag if provided, otherwise fall back to config or default
+		format := cfg.Format
+		if format == "" {
+			format = "auto"
+			if cfg.Config != nil && cfg.Config.UI.Format != "" {
+				format = cfg.Config.UI.Format
+			}
+		}
+
+		// Get theme and word wrap from config if available
+		theme := "auto"
+		wordWrap := 80
+		if cfg.Config != nil {
+			if cfg.Config.UI.Theme != "" {
+				theme = cfg.Config.UI.Theme
+			}
+			if cfg.Config.UI.WordWrap > 0 {
+				wordWrap = cfg.Config.UI.WordWrap
+			}
+		}
+
+		// Create formatter
+		f, err := output.GetFormatterFromConfig(format, theme, wordWrap)
 		if err == nil {
 			formatter = f
 		}
@@ -59,7 +84,7 @@ func NewOutputWriter(cfg *OutputConfig) (*OutputWriter, error) {
 	}
 
 	// Use buffered writer for piped output or file output
-	if cfg.Mode.PipeOut || cfg.FilePath != "" {
+	if cfg.Mode != nil && (cfg.Mode.PipeOut || cfg.FilePath != "") {
 		ow.buffered = bufio.NewWriter(writer)
 		ow.writer = ow.buffered
 	}
@@ -125,7 +150,7 @@ func (w *OutputWriter) IsTTY() bool {
 
 // WriteMarkdown writes markdown content with formatting if TTY
 func (w *OutputWriter) WriteMarkdown(markdown string) error {
-	if w.formatter != nil {
+	if w.formatter != nil && w.formatter.IsColorized() {
 		// Apply markdown formatting for TTY
 		rendered, err := w.formatter.Render(markdown)
 		if err != nil {
@@ -134,6 +159,6 @@ func (w *OutputWriter) WriteMarkdown(markdown string) error {
 		}
 		return w.Write(rendered)
 	}
-	// Plain text for non-TTY
+	// Plain text for non-TTY or when formatter is disabled
 	return w.WriteLine(markdown)
 }

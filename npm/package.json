@@ -1,6 +1,6 @@
 {
   "name": "scmd-cli",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "AI-powered slash commands for any terminal. Works offline by default.",
   "main": "index.js",
   "bin": {

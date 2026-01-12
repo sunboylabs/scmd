@@ -179,11 +179,3 @@ func buildExplainPrompt(content, subject string) string {
 	}
 	return fmt.Sprintf("Explain the following code from %s:\n\n```\n%s\n```", subject, content)
 }
-
-func isFile(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return !info.IsDir()
-}

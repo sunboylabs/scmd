@@ -21,6 +21,9 @@ func Default() *Config {
 			Streaming: true,
 			Colors:    true,
 			Verbose:   false,
+			Format:    "auto",
+			Theme:     "auto",
+			WordWrap:  80,
 		},
 		Models: ModelsConfig{
 			Directory:    filepath.Join(DataDir(), "models"),
