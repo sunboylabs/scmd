@@ -638,18 +638,43 @@ func runPrompt(ctx context.Context, prompt, stdin string, mode *IOMode, output *
 			if err != nil {
 				return fmt.Errorf("completion failed: %w", err)
 			}
-			output.WriteLine(resp.Content)
+			// Apply markdown rendering for non-streaming fallback
+			if err := output.WriteMarkdown(resp.Content); err != nil {
+				return err
+			}
 			return nil
 		}
 
+		// Buffer chunks for markdown rendering
+		var contentBuffer strings.Builder
 		for chunk := range ch {
 			if chunk.Error != nil {
 				return fmt.Errorf("stream error: %w", chunk.Error)
 			}
+			// Print chunk for real-time feedback
 			fmt.Print(chunk.Content)
+			// Also buffer for markdown rendering
+			contentBuffer.WriteString(chunk.Content)
 			if chunk.Done {
 				fmt.Println()
 				break
+			}
+		}
+
+		// Now apply markdown rendering to the complete response
+		// Clear the line and move cursor up to overwrite the streamed output
+		fullContent := contentBuffer.String()
+		if looksLikeMarkdown(fullContent) {
+			// Move cursor to beginning of streamed output
+			// Count lines in the output
+			lines := strings.Count(fullContent, "\n") + 1
+			// Move cursor up by that many lines
+			fmt.Printf("\033[%dA", lines)
+			// Clear from cursor to end of screen
+			fmt.Print("\033[J")
+			// Now render with markdown formatting
+			if err := output.WriteMarkdown(fullContent); err != nil {
+				return err
 			}
 		}
 		return nil

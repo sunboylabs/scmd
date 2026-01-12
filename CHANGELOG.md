@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-01-12
+
+### Fixed
+- **Markdown Rendering**: Fixed streaming AI responses to use Glamour markdown renderer
+  - Streaming responses (TTY mode) now buffer content and apply markdown formatting
+  - Code blocks now display with syntax highlighting
+  - Markdown headers, lists, and formatting properly rendered
+  - Non-streaming fallback also uses markdown renderer
+  - Resolves issue where AI-generated markdown was displayed as plain text
+
+### Changed
+- Streaming response path now buffers chunks and applies post-stream markdown rendering
+- Terminal cursor manipulation added to replace plain streamed text with formatted output
+- Non-streaming paths consistently use `WriteMarkdown()` method
+
+### Technical
+- Updated `internal/cli/root.go::runPrompt()` to buffer streaming chunks
+- Added ANSI escape sequences for cursor positioning and screen clearing
+- Streaming output now checked with `looksLikeMarkdown()` before rendering
+- All response paths (streaming, non-streaming, fallback) now support markdown formatting
+
 ## [0.5.0] - 2026-01-12
 
 ### Fixed
@@ -275,7 +296,9 @@ To create a new release:
 
 ## Version History
 
-[Unreleased]: https://github.com/sunboylabs/scmd/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/sunboylabs/scmd/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/sunboylabs/scmd/releases/tag/v0.5.1
+[0.5.0]: https://github.com/sunboylabs/scmd/releases/tag/v0.5.0
 [0.4.3]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.3
 [0.4.2]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.2
 [0.4.1]: https://github.com/sunboylabs/scmd/releases/tag/v0.4.1
