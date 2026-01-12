@@ -43,6 +43,12 @@ var rootCmd = &cobra.Command{
 	Short: "AI-powered slash commands in your terminal",
 	Long: `scmd brings AI-powered slash commands to any terminal.
 
+💡 Discover 100+ Commands:
+  Search registry:     scmd registry search <topic>
+  Browse categories:   scmd registry categories
+  Install commands:    scmd repo install official/<command>
+  List installed:      scmd slash list
+
 Backends (in order of preference):
   - Ollama (local): Runs free open-source models locally
   - OpenAI/Together/Groq: Set API key via environment variable
@@ -50,6 +56,8 @@ Backends (in order of preference):
 Examples:
   scmd                           Start interactive mode
   scmd explain file.go           Explain code
+  scmd registry search docker    Find docker-related commands
+  scmd repo install official/gc  Install git commit helper
   cat foo.md | scmd -p "summarize this" > summary.md
   git diff | scmd review -o review.md
 
@@ -730,6 +738,7 @@ func looksLikeMarkdown(s string) bool {
 
 func runREPL(execCtx *command.ExecContext) error {
 	fmt.Println("scmd - AI-powered slash commands")
+	fmt.Println()
 
 	// Show which backend is active
 	if execCtx.Backend != nil {
@@ -739,7 +748,12 @@ func runREPL(execCtx *command.ExecContext) error {
 		fmt.Println("Warning: No backend available")
 	}
 
-	fmt.Println("Type /help for available commands")
+	fmt.Println()
+	fmt.Println("💡 Discover 100+ commands:")
+	fmt.Println("   scmd registry search <topic>")
+	fmt.Println("   scmd repo install official/<name>")
+	fmt.Println()
+	fmt.Println("Type /help for built-in commands")
 	fmt.Println()
 
 	// Simple REPL - for now just show help

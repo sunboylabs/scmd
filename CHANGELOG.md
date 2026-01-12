@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-01-12
+
+### Fixed
+- **CRITICAL**: Fixed repository manifest parsing bug preventing command discovery
+  - Added support for legacy manifest format with `path` field instead of `name`/`description`
+  - Implemented automatic metadata fetching from command files when manifest lacks details
+  - Added parallel fetching (10 concurrent requests) for efficient manifest normalization
+  - Commands from official repository (100+ commands) now properly load with names and descriptions
+  - Fixed `scmd repo search` showing blank command names and descriptions
+  - Fixed `scmd repo show` and `scmd repo install` command lookup failures
+
+### Added
+- **Enhanced Command Discovery UI**: Major improvements to help users find the 100+ available commands
+  - Added prominent "💡 Discover 100+ Commands" section to root `scmd --help` output
+  - Enhanced `scmd registry` help text with category overview and examples
+  - Updated `scmd repo` help text with quick start guide
+  - Improved `/help` command output to highlight command discovery features
+  - Added registry discovery tips to interactive REPL welcome message
+- **Legacy Manifest Support**: Backward compatibility for different repository manifest schemas
+  - Automatically detects and handles `path` field as alternative to `file`
+  - Fetches missing metadata (name, description, category) from individual command files
+  - Graceful degradation: skips commands that fail to fetch without breaking entire manifest
+- **Test Coverage**: Added comprehensive tests for manifest schema validation
+  - New test: `TestManager_FetchManifestLegacyFormat` validates legacy format handling
+  - Verifies parallel fetching and metadata normalization
+  - Ensures backward compatibility with existing manifests
+
+### Changed
+- Repository manager now normalizes manifests after fetching to populate missing metadata
+- Help text across all commands now emphasizes the 100+ command registry
+- Discovery features promoted to top-level help output for better visibility
+
+### Technical
+- Updated `internal/repos/manager.go`:
+  - Added `Path` field to `Command` struct for legacy format support
+  - Implemented `normalizeManifest()` method with parallel command file fetching
+  - Added semaphore-based concurrency control (10 concurrent requests)
+- Updated `internal/cli/root.go`: Enhanced root command and REPL help text
+- Updated `internal/cli/repo.go`: Added quick start guide to repo command help
+- Updated `internal/cli/registry.go`: Enhanced registry command help with category showcase
+- Updated `internal/command/builtin/help.go`: Promoted discovery section in help output
+- Added `internal/repos/manager_test.go::TestManager_FetchManifestLegacyFormat`
+
+### Impact
+- Users can now discover and install all 100+ official commands
+- Repository search functionality fully operational
+- Improved first-time user experience with better command discoverability
+- Official repository at `github.com/sunboylabs/commands` now works seamlessly
+
 ## [0.4.3] - 2026-01-12
 
 ### Added

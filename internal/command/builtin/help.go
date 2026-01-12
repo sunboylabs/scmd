@@ -89,12 +89,13 @@ func (c *HelpCommand) showAllHelp(execCtx *command.ExecContext) (*command.Result
 
 	sb.WriteString("\nUse '/help <command>' for more information.\n")
 
-	// Custom Commands section
-	sb.WriteString("\nCustomizing:\n")
-	sb.WriteString("  Local commands:   ~/.scmd/commands/*.yaml\n")
-	sb.WriteString("  Repositories:     scmd repo list\n")
-	sb.WriteString("  Install commands: scmd repo install <repo>/<command>\n")
-	sb.WriteString("  Examples:         See examples/commands/ in the project\n")
+	// Discovery section - promoted to top
+	sb.WriteString("\n💡 Discover 100+ Commands:\n")
+	sb.WriteString("  Search registry:     scmd registry search <topic>\n")
+	sb.WriteString("  Browse categories:   scmd registry categories\n")
+	sb.WriteString("  Install commands:    scmd repo install official/<name>\n")
+	sb.WriteString("  List installed:      scmd slash list\n")
+	sb.WriteString("\n  Local commands:      ~/.scmd/commands/*.yaml\n")
 
 	execCtx.UI.Write(sb.String())
 	return &command.Result{Success: true}, nil

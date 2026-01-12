@@ -22,7 +22,17 @@ var repoCmd = &cobra.Command{
 	Long: `Manage repositories that provide slash commands.
 
 Repositories are remote sources of slash commands that you can install and use.
-Each repository contains a manifest (scmd-repo.yaml) listing available commands.`,
+Each repository contains a manifest (scmd-repo.yaml) listing available commands.
+
+Quick Start:
+  1. Update repositories:  scmd repo update
+  2. Search for commands:  scmd repo search <topic>
+  3. View command details:  scmd repo show official/<command>
+  4. Install a command:    scmd repo install official/<command>
+  5. Use the command:      scmd /<command>
+
+The official repository provides 100+ commands across categories like git, docker,
+devops, code-review, documentation, debugging, data processing, and security.`,
 }
 
 // repoAddCmd adds a new repository

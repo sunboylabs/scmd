@@ -336,3 +336,76 @@ func TestMatchesQuery(t *testing.T) {
 	assert.True(t, matchesQuery(cmd, "Generate"))
 	assert.False(t, matchesQuery(cmd, "docker"))
 }
+
+// TestManager_FetchManifestLegacyFormat tests handling of legacy manifest format with path field
+func TestManager_FetchManifestLegacyFormat(t *testing.T) {
+	// Allow localhost URLs for test server
+	t.Setenv("SCMD_ALLOW_LOCALHOST", "1")
+
+	// Create test server with legacy manifest format (path instead of name/description)
+	legacyManifest := `
+name: legacy-repo
+version: "1.0.0"
+description: Legacy format repository
+commands:
+  - path: commands/git/commit.yaml
+  - path: commands/docker/compose.yaml
+`
+
+	// Command specs for fetching
+	commitSpec := `name: commit
+version: "1.0.0"
+description: Generate commit messages
+category: git
+prompt:
+  template: "Generate commit"
+`
+
+	composeSpec := `name: compose
+version: "1.0.0"
+description: Generate docker-compose files
+category: docker
+prompt:
+  template: "Generate compose"
+`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/scmd-repo.yaml":
+			w.Write([]byte(legacyManifest))
+		case "/commands/git/commit.yaml":
+			w.Write([]byte(commitSpec))
+		case "/commands/docker/compose.yaml":
+			w.Write([]byte(composeSpec))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer server.Close()
+
+	m := NewManager("/tmp/test")
+	repo := &Repository{
+		Name:    "legacy",
+		URL:     server.URL,
+		Enabled: true,
+	}
+
+	ctx := context.Background()
+	manifest, err := m.FetchManifest(ctx, repo)
+	require.NoError(t, err)
+
+	// Verify manifest was fetched
+	assert.Equal(t, "legacy-repo", manifest.Name)
+	assert.Len(t, manifest.Commands, 2)
+
+	// Verify commands were normalized with metadata from command files
+	assert.Equal(t, "commit", manifest.Commands[0].Name)
+	assert.Equal(t, "Generate commit messages", manifest.Commands[0].Description)
+	assert.Equal(t, "git", manifest.Commands[0].Category)
+	assert.Equal(t, "commands/git/commit.yaml", manifest.Commands[0].File)
+
+	assert.Equal(t, "compose", manifest.Commands[1].Name)
+	assert.Equal(t, "Generate docker-compose files", manifest.Commands[1].Description)
+	assert.Equal(t, "docker", manifest.Commands[1].Category)
+	assert.Equal(t, "commands/docker/compose.yaml", manifest.Commands[1].File)
+}

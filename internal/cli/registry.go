@@ -16,10 +16,21 @@ import (
 var registryCmd = &cobra.Command{
 	Use:   "registry",
 	Short: "Search and browse the scmd command registry",
-	Long: `Access the central scmd command registry to discover commands.
+	Long: `Access the central scmd command registry with 100+ commands.
 
-The registry provides a curated collection of slash commands from
-verified publishers, with ratings, categories, and trending data.`,
+The registry provides a curated collection of slash commands from verified
+publishers, organized by category with ratings and usage statistics.
+
+Popular Categories:
+  🔀 Git workflow       💻 Code analysis      🚀 DevOps
+  📊 Data processing    📝 Documentation      🐛 Debugging
+  🔒 Security           🐚 Shell utilities
+
+Examples:
+  scmd registry search git            Find git-related commands
+  scmd registry featured              Show trending commands
+  scmd registry search --category=devops
+  scmd repo install official/<name>   Install a command`,
 	Aliases: []string{"reg"},
 }
 

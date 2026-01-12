@@ -45,6 +45,7 @@ type Command struct {
 	Aliases     []string `yaml:"aliases,omitempty"`
 	Category    string   `yaml:"category,omitempty"`
 	File        string   `yaml:"file"` // Path to command YAML file in repo
+	Path        string   `yaml:"path"` // Legacy support: alternative to File field
 }
 
 // CommandSpec is the full command specification from a YAML file
@@ -371,7 +372,89 @@ func (m *Manager) FetchManifest(ctx context.Context, repo *Repository) (*Manifes
 		return nil, fmt.Errorf("parse manifest: %w", err)
 	}
 
+	// Normalize legacy format: handle path-only entries
+	if err := m.normalizeManifest(ctx, repo, &manifest); err != nil {
+		return nil, fmt.Errorf("normalize manifest: %w", err)
+	}
+
 	return &manifest, nil
+}
+
+// normalizeManifest handles legacy manifest formats by fetching metadata from command files
+func (m *Manager) normalizeManifest(ctx context.Context, repo *Repository, manifest *Manifest) error {
+	// Collect commands that need metadata fetching
+	type fetchJob struct {
+		index int
+		cmd   *Command
+	}
+
+	var needsFetch []fetchJob
+	for i := range manifest.Commands {
+		cmd := &manifest.Commands[i]
+
+		// Handle legacy path field
+		if cmd.File == "" && cmd.Path != "" {
+			cmd.File = cmd.Path
+		}
+
+		// If name or description is missing, we need to fetch the command file
+		if (cmd.Name == "" || cmd.Description == "") && cmd.File != "" {
+			needsFetch = append(needsFetch, fetchJob{index: i, cmd: cmd})
+		}
+	}
+
+	// Nothing to fetch
+	if len(needsFetch) == 0 {
+		return nil
+	}
+
+	// Fetch command metadata in parallel (up to 10 concurrent requests)
+	concurrency := 10
+	if len(needsFetch) < concurrency {
+		concurrency = len(needsFetch)
+	}
+
+	semaphore := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	for _, job := range needsFetch {
+		wg.Add(1)
+		go func(j fetchJob) {
+			defer wg.Done()
+
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			spec, err := m.FetchCommand(ctx, repo, j.cmd.File)
+			if err != nil {
+				// Skip commands that fail to fetch
+				return
+			}
+
+			// Update command metadata
+			mu.Lock()
+			if j.cmd.Name == "" {
+				j.cmd.Name = spec.Name
+			}
+			if j.cmd.Description == "" {
+				j.cmd.Description = spec.Description
+			}
+			if j.cmd.Category == "" {
+				j.cmd.Category = spec.Category
+			}
+			if j.cmd.Usage == "" && spec.Usage != "" {
+				j.cmd.Usage = spec.Usage
+			}
+			if len(j.cmd.Aliases) == 0 && len(spec.Aliases) > 0 {
+				j.cmd.Aliases = spec.Aliases
+			}
+			mu.Unlock()
+		}(job)
+	}
+
+	wg.Wait()
+	return nil
 }
 
 // FetchCommand fetches a command spec from a repo
