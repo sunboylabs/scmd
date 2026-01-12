@@ -1,0 +1,61 @@
+name: inline-review
+version: "1.0.0"
+description: "Quick code review with inline template"
+category: review
+author: scmd
+
+args:
+  - name: file
+    description: "File to review"
+    required: true
+
+flags:
+  - name: focus
+    short: f
+    description: "Specific aspect to focus on (performance, readability, bugs)"
+    default: "general"
+
+template:
+  inline:
+    system_prompt: |
+      You are an experienced code reviewer with expertise in software engineering best practices.
+      Focus on code quality, potential bugs, and practical improvements.
+
+    user_prompt_template: |
+      Review this {{.Language}} code:
+
+      ```{{.Language}}
+      {{.Code}}
+      ```
+
+      {{if .Focus}}
+      Focus area: {{.Focus}}
+      {{end}}
+
+      Provide:
+      1. Overall code quality assessment (1-5 stars)
+      2. Potential bugs or issues with severity ratings
+      3. Suggestions for improvement with code examples
+      4. Best practices recommendations
+
+    variables:
+      - name: Language
+        description: "Programming language"
+        default: "unknown"
+
+      - name: Code
+        description: "Code to review"
+        required: true
+
+      - name: Focus
+        description: "Specific review focus"
+        required: false
+
+model:
+  preferred: qwen2.5-3b
+  temperature: 0.5
+
+examples:
+  - "cat utils.py | scmd inline-review utils.py"
+  - "cat helper.js | scmd inline-review helper.js --focus performance"
+  - "scmd inline-review algorithm.go --focus readability"

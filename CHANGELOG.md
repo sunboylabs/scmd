@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-01-12
+
+### Added
+- **Template-Command Integration**: Commands can now reference templates for flexible, reusable prompt patterns
+  - Commands support three modes: direct prompts, template references, or inline templates
+  - Automatic variable mapping from command args/flags to template variables
+  - Template validation at command installation time
+- **Unified Command Specification**: Extended CommandSpec with optional Template field
+  - `TemplateRef` struct supports named templates and inline definitions
+  - Variable mapping with Go template syntax (`{{.variable}}`)
+  - Automatic context population (file extension, language detection, stdin)
+- **Official Commands Repository**: Created github.com/scmd/commands with 100+ categorized commands
+  - 8 categories: git (15), code (15), devops (15), docs (10), debug (10), data (10), security (15), shell (10)
+  - 10 reusable templates for common workflows
+  - Comprehensive documentation (README, CONTRIBUTING, REPO_STRUCTURE)
+- **Template Executor**: New `TemplateExecutor` for handling template-based command execution
+  - Language detection for 20+ programming languages
+  - Context building with automatic file content/extension mapping
+  - Support for both named and inline templates
+
+### Changed
+- Updated repository manager to handle both commands and templates in manifests
+- Enhanced command executor with template execution path
+- Improved repository manifest format to include templates list
+
+### Documentation
+- **docs/template-command-integration.md**: Complete integration guide with examples
+- **examples/commands/**: Example command specs using templates
+- **examples/templates/**: Example template definitions
+
+### Technical
+- Added `internal/repos/template_executor.go` for template-based execution
+- Added `internal/repos/template_integration_test.go` with comprehensive test coverage
+- Updated `internal/repos/manager.go` with TemplateRef and InlineTemplate structs
+- Updated `internal/templates/manager.go` with NewManagerWithDir for testing
+- All existing tests pass, new tests cover template integration
+
 ## [0.4.1] - 2026-01-11
 
 ### Fixed
@@ -150,7 +187,8 @@ To create a new release:
 
 ## Version History
 
-[Unreleased]: https://github.com/sunboy/scmd/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/sunboy/scmd/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/sunboy/scmd/releases/tag/v0.4.2
 [0.4.1]: https://github.com/sunboy/scmd/releases/tag/v0.4.1
 [0.4.0]: https://github.com/sunboy/scmd/releases/tag/v0.4.0
 [0.3.1]: https://github.com/sunboy/scmd/releases/tag/v0.3.1

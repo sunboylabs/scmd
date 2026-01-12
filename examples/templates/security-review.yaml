@@ -1,0 +1,81 @@
+name: security-review
+version: "1.0"
+author: scmd
+description: "OWASP Top 10 focused security analysis"
+tags:
+  - security
+  - owasp
+  - review
+compatible_commands:
+  - review
+  - analyze
+  - audit
+
+system_prompt: |
+  You are a security expert specializing in application security.
+  Focus on OWASP Top 10 vulnerabilities and provide actionable remediation.
+  Use clear severity ratings: Critical, High, Medium, Low.
+
+user_prompt_template: |
+  Review the following {{.Language}} code for security issues:
+
+  ```{{.Language}}
+  {{.Code}}
+  ```
+
+  {{if .Context}}
+  Additional context:
+  {{.Context}}
+  {{end}}
+
+  Focus areas:
+  1. Injection attacks (SQL, Command, XSS)
+  2. Broken authentication
+  3. Sensitive data exposure
+  4. XML external entities (XXE)
+  5. Broken access control
+  6. Security misconfiguration
+  7. Cross-site scripting (XSS)
+  8. Insecure deserialization
+  9. Using components with known vulnerabilities
+  10. Insufficient logging & monitoring
+
+  Provide:
+  - Severity rating for each issue (Critical/High/Medium/Low)
+  - Specific vulnerabilities found with line numbers
+  - Remediation steps with code examples
+  - Risk assessment and impact analysis
+
+variables:
+  - name: Language
+    description: "Programming language of the code"
+    default: "auto-detect"
+
+  - name: Code
+    description: "The code to review"
+    required: true
+
+  - name: Context
+    description: "Additional context about the codebase"
+    required: false
+
+output:
+  format: markdown
+  sections:
+    - title: "Security Assessment"
+      required: true
+    - title: "Vulnerabilities Found"
+      required: true
+    - title: "Recommendations"
+      required: true
+
+recommended_models:
+  - qwen2.5-7b
+  - gpt-4
+
+examples:
+  - description: "Review authentication code"
+    command: "cat login.js | scmd security-audit login.js"
+
+  - description: "Review with context"
+    command: "scmd review auth.py --template security-review --context 'Flask app with JWT'"

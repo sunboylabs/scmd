@@ -102,6 +102,37 @@ func (c *PluginCommand) Execute(ctx context.Context, args *command.Args, execCtx
 		}
 	}
 
+	// Check for template-based execution (NEW in v0.4.2)
+	if c.spec.Template != nil {
+		templateExecutor, err := NewTemplateExecutor(execCtx.DataDir)
+		if err != nil {
+			return &command.Result{
+				Success: false,
+				Error:   fmt.Sprintf("failed to initialize template executor: %v", err),
+			}, nil
+		}
+
+		result, err := templateExecutor.ExecuteTemplateCommand(ctx, c.spec, args, execCtx)
+		if err != nil {
+			return &command.Result{
+				Success: false,
+				Error:   fmt.Sprintf("template execution failed: %v", err),
+			}, nil
+		}
+
+		// Execute post-hooks
+		if c.spec.Hooks != nil && len(c.spec.Hooks.Post) > 0 {
+			if err := c.executeHooks(ctx, c.spec.Hooks.Post); err != nil {
+				return &command.Result{
+					Success: false,
+					Error:   fmt.Sprintf("post-hook failed: %v", err),
+				}, nil
+			}
+		}
+
+		return result, nil
+	}
+
 	// Check for composition - delegate to composer if present
 	if c.spec.Compose != nil && execCtx.Registry != nil {
 		// Create loader and composer for composition execution

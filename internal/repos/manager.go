@@ -28,12 +28,13 @@ type Repository struct {
 
 // Manifest is the repo's scmd-repo.yaml file
 type Manifest struct {
-	Name        string    `yaml:"name"`
-	Version     string    `yaml:"version"`
-	Description string    `yaml:"description"`
-	Author      string    `yaml:"author,omitempty"`
-	Homepage    string    `yaml:"homepage,omitempty"`
-	Commands    []Command `yaml:"commands"`
+	Name        string         `yaml:"name"`
+	Version     string         `yaml:"version"`
+	Description string         `yaml:"description"`
+	Author      string         `yaml:"author,omitempty"`
+	Homepage    string         `yaml:"homepage,omitempty"`
+	Commands    []Command      `yaml:"commands"`
+	Templates   []TemplateRef  `yaml:"templates,omitempty"` // Template references in repository
 }
 
 // Command represents a slash command from a repo
@@ -66,6 +67,9 @@ type CommandSpec struct {
 	Examples    []string          `yaml:"examples,omitempty" json:"examples,omitempty"`
 	Metadata    map[string]string `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 
+	// Template integration (NEW in v0.4.2)
+	Template *TemplateRef `yaml:"template,omitempty" json:"template,omitempty"`
+
 	// Enhanced features
 	Dependencies []Dependency `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
 	Compose      *ComposeSpec `yaml:"compose,omitempty" json:"compose,omitempty"`
@@ -73,6 +77,35 @@ type CommandSpec struct {
 	Inputs       []InputSpec  `yaml:"inputs,omitempty" json:"inputs,omitempty"`
 	Outputs      *OutputSpec  `yaml:"outputs,omitempty" json:"outputs,omitempty"`
 	Context      *ContextSpec `yaml:"context,omitempty" json:"context,omitempty"`
+}
+
+// TemplateRef references a template for command execution
+type TemplateRef struct {
+	// Name of the template to use (references ~/.scmd/templates/<name>.yaml)
+	Name string `yaml:"name,omitempty" json:"name,omitempty"`
+
+	// Variables to map from command context to template variables
+	// Keys are template variable names, values are command context references
+	// e.g., "Language": "{{.file_extension}}", "Code": "{{.file_content}}"
+	Variables map[string]string `yaml:"variables,omitempty" json:"variables,omitempty"`
+
+	// Inline template definition (alternative to referencing by name)
+	Inline *InlineTemplate `yaml:"inline,omitempty" json:"inline,omitempty"`
+}
+
+// InlineTemplate defines a template inline within the command spec
+type InlineTemplate struct {
+	SystemPrompt       string            `yaml:"system_prompt,omitempty" json:"system_prompt,omitempty"`
+	UserPromptTemplate string            `yaml:"user_prompt_template" json:"user_prompt_template"`
+	Variables          []TemplateVariable `yaml:"variables,omitempty" json:"variables,omitempty"`
+}
+
+// TemplateVariable defines a variable for inline templates
+type TemplateVariable struct {
+	Name        string `yaml:"name" json:"name"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
+	Default     string `yaml:"default,omitempty" json:"default,omitempty"`
+	Required    bool   `yaml:"required,omitempty" json:"required,omitempty"`
 }
 
 // Dependency defines a command dependency
@@ -460,6 +493,13 @@ func toLower(s string) string {
 
 // InstallCommand saves a command spec to local storage
 func (m *Manager) InstallCommand(spec *CommandSpec, installDir string) error {
+	// Validate template reference if present
+	if spec.Template != nil {
+		if err := m.validateTemplateRef(spec.Template); err != nil {
+			return fmt.Errorf("invalid template reference: %w", err)
+		}
+	}
+
 	data, err := yaml.Marshal(spec)
 	if err != nil {
 		return fmt.Errorf("marshal command: %w", err)
@@ -470,6 +510,37 @@ func (m *Manager) InstallCommand(spec *CommandSpec, installDir string) error {
 
 	if err := os.WriteFile(filepath, data, 0644); err != nil {
 		return fmt.Errorf("write command: %w", err)
+	}
+
+	return nil
+}
+
+// validateTemplateRef validates a template reference
+func (m *Manager) validateTemplateRef(ref *TemplateRef) error {
+	// Must have either name or inline, not both
+	hasName := ref.Name != ""
+	hasInline := ref.Inline != nil
+
+	if !hasName && !hasInline {
+		return fmt.Errorf("template must specify either 'name' or 'inline'")
+	}
+
+	if hasName && hasInline {
+		return fmt.Errorf("template cannot specify both 'name' and 'inline'")
+	}
+
+	// Validate inline template if present
+	if hasInline {
+		if ref.Inline.UserPromptTemplate == "" {
+			return fmt.Errorf("inline template must have user_prompt_template")
+		}
+
+		// Validate required variables
+		for _, v := range ref.Inline.Variables {
+			if v.Name == "" {
+				return fmt.Errorf("inline template variable must have a name")
+			}
+		}
 	}
 
 	return nil

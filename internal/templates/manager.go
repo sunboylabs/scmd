@@ -31,6 +31,18 @@ func NewManager() (*Manager, error) {
 	}, nil
 }
 
+// NewManagerWithDir creates a template manager with a custom templates directory
+func NewManagerWithDir(templatesDir string) (*Manager, error) {
+	if err := os.MkdirAll(templatesDir, 0755); err != nil {
+		return nil, err
+	}
+
+	return &Manager{
+		templatesDir: templatesDir,
+		cache:        make(map[string]*Template),
+	}, nil
+}
+
 // Load loads a template by name
 func (m *Manager) Load(name string) (*Template, error) {
 	// Check cache

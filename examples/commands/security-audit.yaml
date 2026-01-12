@@ -1,0 +1,46 @@
+name: security-audit
+version: "1.0.0"
+description: "Comprehensive security audit using OWASP template"
+category: security
+author: scmd
+license: MIT
+
+args:
+  - name: file
+    description: "File to audit"
+    required: true
+
+flags:
+  - name: additional-context
+    short: c
+    description: "Additional context for the audit"
+    default: ""
+
+  - name: severity-threshold
+    short: s
+    description: "Minimum severity to report (critical, high, medium, low)"
+    default: "low"
+
+template:
+  name: security-review
+  variables:
+    Language: "{{.file_extension}}"
+    Code: "{{.file_content}}"
+    Context: "{{.additional_context}}"
+
+model:
+  preferred: qwen2.5-7b
+  temperature: 0.3
+  max_tokens: 2048
+
+examples:
+  - "cat auth.js | scmd security-audit auth.js"
+  - "cat login.py | scmd security-audit login.py --additional-context 'Flask web app with JWT authentication'"
+  - "scmd security-audit api.ts --severity-threshold high"
+
+metadata:
+  min_model_size: "7b"
+  tags:
+    - security
+    - owasp
+    - audit
