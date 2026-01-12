@@ -1,67 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://scmd.github.io/scmd/</loc>
+         <loc>https://sunboylabs.github.io/scmd/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/STABILITY_IMPROVEMENTS/</loc>
+         <loc>https://sunboylabs.github.io/scmd/STABILITY_IMPROVEMENTS/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/architecture/</loc>
+         <loc>https://sunboylabs.github.io/scmd/architecture/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/template-command-integration/</loc>
+         <loc>https://sunboylabs.github.io/scmd/template-command-integration/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/troubleshooting/</loc>
+         <loc>https://sunboylabs.github.io/scmd/troubleshooting/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/about/changelog/</loc>
+         <loc>https://sunboylabs.github.io/scmd/about/changelog/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/architecture/STABILITY/</loc>
+         <loc>https://sunboylabs.github.io/scmd/architecture/STABILITY/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/command-authoring/automatic-context/</loc>
+         <loc>https://sunboylabs.github.io/scmd/command-authoring/automatic-context/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/command-authoring/composition/</loc>
+         <loc>https://sunboylabs.github.io/scmd/command-authoring/composition/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/command-authoring/hooks/</loc>
+         <loc>https://sunboylabs.github.io/scmd/command-authoring/hooks/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/command-authoring/tool-calling/</loc>
+         <loc>https://sunboylabs.github.io/scmd/command-authoring/tool-calling/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/contributing/distribution/</loc>
+         <loc>https://sunboylabs.github.io/scmd/contributing/distribution/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/contributing/release-process/</loc>
+         <loc>https://sunboylabs.github.io/scmd/contributing/release-process/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/getting-started/installation/</loc>
+         <loc>https://sunboylabs.github.io/scmd/getting-started/installation/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/getting-started/quick-start/</loc>
+         <loc>https://sunboylabs.github.io/scmd/getting-started/quick-start/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
     <url>
-         <loc>https://scmd.github.io/scmd/user-guide/safety-features/</loc>
+         <loc>https://sunboylabs.github.io/scmd/user-guide/safety-features/</loc>
          <lastmod>2026-01-12</lastmod>
     </url>
 </urlset>
