@@ -103,7 +103,7 @@ func TestManager_LoadDefaults(t *testing.T) {
 	// Should have default repo
 	repo, ok := m.Get("official")
 	assert.True(t, ok)
-	assert.Contains(t, repo.URL, "scmd")
+	assert.Contains(t, repo.URL, "commands")
 }
 
 func TestManager_FetchManifest(t *testing.T) {
