@@ -113,7 +113,7 @@ brews:
     ids:
       - homebrew
     repository:
-      owner: sunboy
+      owner: sunboylabs
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
@@ -219,7 +219,7 @@ nfpms:
 # GitHub release
 release:
   github:
-    owner: sunboy
+    owner: sunboylabs
     name: scmd
   draft: false
   prerelease: auto
