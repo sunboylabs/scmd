@@ -49,5 +49,5 @@ jobs:
 
       - name: Verify deployment
         run: |
-          echo "Documentation deployed to: https://scmd.github.io/scmd/"
+          echo "Documentation deployed to: https://sunboylabs.github.io/scmd/"
           echo "Please allow a few minutes for GitHub Pages to update"
