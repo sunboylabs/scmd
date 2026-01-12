@@ -115,7 +115,7 @@ brews:
     repository:
       owner: sunboylabs
       name: homebrew-tap
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: https://github.com/sunboylabs/scmd
     description: "AI-powered slash commands for any terminal. Works offline by default."
